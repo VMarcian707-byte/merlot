@@ -4,7 +4,7 @@ import { LuxuryBackground, OrnamentDivider, GoldBadge, LuxuryCard, NoiseOverlay 
 import { 
   CreditCard, Bell, Calendar, History, LogOut, Clock, Percent, 
   PartyPopper, Wifi, Crown, Star, Sparkles, ChevronRight, MapPin,
-  Wine, Gem
+  Wine, Gem, X
 } from 'lucide-react';
 
 type Tab = 'card' | 'events' | 'history' | 'benefits';
@@ -12,6 +12,7 @@ type Tab = 'card' | 'events' | 'history' | 'benefits';
 export default function ClientDashboard() {
   const { currentUser, logout, nfcCards, visitsLog, announcements, discountRules } = useStore();
   const [activeTab, setActiveTab] = useState<Tab>('card');
+  const [showNotifications, setShowNotifications] = useState(false);
 
   if (!currentUser) return null;
 
@@ -66,16 +67,17 @@ export default function ClientDashboard() {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                {myAnnouncements.length > 0 && (
-                  <div className="relative">
-                    <div className="w-10 h-10 rounded-full glass flex items-center justify-center">
-                      <Bell className="w-4 h-4 text-[#D4AF37]" />
-                    </div>
-                    <div className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-[#D4AF37] flex items-center justify-center">
+                <button 
+                  onClick={() => setShowNotifications(true)}
+                  className="relative w-10 h-10 rounded-full glass flex items-center justify-center hover:border-[#D4AF37]/30 transition-all duration-300"
+                >
+                  <Bell className="w-4 h-4 text-[#D4AF37]" />
+                  {myAnnouncements.length > 0 && (
+                    <div className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-[#D4AF37] flex items-center justify-center animate-pulse">
                       <span className="text-[9px] text-[#0a0608] font-bold">{myAnnouncements.length}</span>
                     </div>
-                  </div>
-                )}
+                  )}
+                </button>
                 <button 
                   onClick={logout} 
                   className="w-10 h-10 rounded-full glass flex items-center justify-center hover:border-[#D4AF37]/30 transition-all duration-300"
@@ -358,6 +360,98 @@ export default function ClientDashboard() {
           </div>
         )}
       </div>
+
+      {/* Notifications Panel */}
+      {showNotifications && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center animate-fade-in">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={() => setShowNotifications(false)}
+          />
+          
+          {/* Panel */}
+          <div className="relative w-full max-w-md mx-4 mb-4 sm:mb-0 max-h-[80vh] overflow-hidden animate-slide-up">
+            <div className="card-luxury border-[#D4AF37]/20 bg-gradient-to-br from-[#1a0d12] to-[#0a0608]">
+              {/* Header */}
+              <div className="flex items-center justify-between p-5 border-b border-white/5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#D4AF37]/20 to-[#722F37]/20 flex items-center justify-center">
+                    <Bell className="w-5 h-5 text-[#D4AF37]" />
+                  </div>
+                  <div>
+                    <h2 className="font-display text-xl text-white">Notificări</h2>
+                    <p className="text-xs text-white/40">{myAnnouncements.length} notificări noi</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setShowNotifications(false)}
+                  className="w-8 h-8 rounded-full glass flex items-center justify-center hover:border-[#D4AF37]/30 transition-all"
+                >
+                  <X className="w-4 h-4 text-white/60" />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-5 overflow-y-auto max-h-[60vh]">
+                {myAnnouncements.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Bell className="w-12 h-12 mx-auto mb-4 text-white/10" />
+                    <p className="text-white/40 text-sm">Nicio notificare momentan</p>
+                    <p className="text-white/20 text-xs mt-1">Vei primi notificări pentru evenimente și oferte</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {myAnnouncements.map((ann, idx) => (
+                      <div 
+                        key={ann.id} 
+                        className="card-luxury animate-slide-up"
+                        style={{ animationDelay: `${idx * 0.05}s` }}
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="font-display text-base text-white flex-1 pr-2">{ann.title}</h3>
+                          <GoldBadge>{ann.target === 'vip' ? 'VIP' : 'Toți'}</GoldBadge>
+                        </div>
+                        <p className="text-sm text-white/60 leading-relaxed mb-3">{ann.message}</p>
+                        {ann.event_date && (
+                          <div className="flex items-center gap-4 pt-3 border-t border-white/5">
+                            <div className="flex items-center gap-1.5">
+                              <Calendar className="w-3.5 h-3.5 text-[#D4AF37]/60" />
+                              <span className="text-xs text-white/40">
+                                {new Date(ann.event_date).toLocaleDateString('ro-RO', { 
+                                  weekday: 'short', day: 'numeric', month: 'short' 
+                                })}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <Clock className="w-3.5 h-3.5 text-[#D4AF37]/60" />
+                              <span className="text-xs text-white/40">
+                                {new Date(ann.event_date).toLocaleTimeString('ro-RO', { 
+                                  hour: '2-digit', minute: '2-digit' 
+                                })}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 border-t border-white/5">
+                <button
+                  onClick={() => setShowNotifications(false)}
+                  className="w-full py-3 rounded-xl glass text-white/60 hover:text-[#D4AF37] hover:border-[#D4AF37]/30 transition-all duration-300 text-sm tracking-wider uppercase"
+                >
+                  Închide
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 z-50">
