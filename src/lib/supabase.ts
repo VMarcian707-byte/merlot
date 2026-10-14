@@ -122,26 +122,35 @@ export const db = {
     },
 
     async create(user: Omit<User, 'id' | 'created_at'> & { password: string }) {
-      // Creează auth user
+      // Creează auth user cu metadata (pentru trigger)
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: user.email,
         password: user.password,
+        options: {
+          data: {
+            name: user.name,
+            role: user.role,
+            phone: user.phone,
+            avatar: user.avatar,
+          }
+        }
       });
       if (authError) throw authError;
 
-      // Creează profil
+      // Actualizează profilul cu datele corecte (trigger-ul ar fi putut folosi defaults)
       const { data, error } = await supabase
         .from('users')
-        .insert({
-          id: authData.user!.id,
+        .update({
           name: user.name,
           phone: user.phone,
           email: user.email,
           role: user.role,
           avatar: user.avatar,
         })
+        .eq('id', authData.user!.id)
         .select()
         .single();
+      
       if (error) throw error;
       return data as User;
     },
