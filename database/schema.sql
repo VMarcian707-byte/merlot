@@ -61,16 +61,28 @@ CREATE TABLE IF NOT EXISTS announcements (
 -- ============================================
 -- INDEXURI pentru performanță
 -- ============================================
-CREATE INDEX IF NOT EXISTS idx_nfc_cards_uuid ON nfc_cards(card_uuid);
-CREATE INDEX IF NOT EXISTS idx_nfc_cards_assigned ON nfc_cards(assigned_user_id);
-CREATE INDEX IF NOT EXISTS idx_nfc_cards_status ON nfc_cards(status);
-CREATE INDEX IF NOT EXISTS idx_visits_client ON visits_log(client_id);
-CREATE INDEX IF NOT EXISTS idx_visits_barman ON visits_log(barman_id);
-CREATE INDEX IF NOT EXISTS idx_visits_date ON visits_log(scanned_at DESC);
-CREATE INDEX IF NOT EXISTS idx_announcements_target ON announcements(target);
-CREATE INDEX IF NOT EXISTS idx_announcements_date ON announcements(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+-- Drop and recreate indexes to avoid conflicts
+DROP INDEX IF EXISTS idx_nfc_cards_uuid;
+DROP INDEX IF EXISTS idx_nfc_cards_assigned;
+DROP INDEX IF EXISTS idx_nfc_cards_status;
+DROP INDEX IF EXISTS idx_visits_client;
+DROP INDEX IF EXISTS idx_visits_barman;
+DROP INDEX IF EXISTS idx_visits_date;
+DROP INDEX IF EXISTS idx_announcements_target;
+DROP INDEX IF EXISTS idx_announcements_date;
+DROP INDEX IF EXISTS idx_users_role;
+DROP INDEX IF EXISTS idx_users_email;
+
+CREATE INDEX idx_nfc_cards_uuid ON nfc_cards(card_uuid);
+CREATE INDEX idx_nfc_cards_assigned ON nfc_cards(assigned_user_id);
+CREATE INDEX idx_nfc_cards_status ON nfc_cards(status);
+CREATE INDEX idx_visits_client ON visits_log(client_id);
+CREATE INDEX idx_visits_barman ON visits_log(barman_id);
+CREATE INDEX idx_visits_date ON visits_log(scanned_at DESC);
+CREATE INDEX idx_announcements_target ON announcements(target);
+CREATE INDEX idx_announcements_date ON announcements(created_at DESC);
+CREATE INDEX idx_users_role ON users(role);
+CREATE INDEX idx_users_email ON users(email);
 
 -- ============================================
 -- ROW LEVEL SECURITY (RLS)
@@ -82,11 +94,13 @@ ALTER TABLE visits_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE announcements ENABLE ROW LEVEL SECURITY;
 
 -- Users: toți autentificați pot citi, doar managerii pot modifica
+DROP POLICY IF EXISTS "Users are viewable by authenticated users" ON users;
 CREATE POLICY "Users are viewable by authenticated users"
   ON users FOR SELECT
   TO authenticated
   USING (true);
 
+DROP POLICY IF EXISTS "Managers can update users" ON users;
 CREATE POLICY "Managers can update users"
   ON users FOR UPDATE
   TO authenticated
@@ -95,11 +109,13 @@ CREATE POLICY "Managers can update users"
   );
 
 -- NFC Cards: toți autentificați pot citi, managerii pot modifica
+DROP POLICY IF EXISTS "Cards are viewable by authenticated users" ON nfc_cards;
 CREATE POLICY "Cards are viewable by authenticated users"
   ON nfc_cards FOR SELECT
   TO authenticated
   USING (true);
 
+DROP POLICY IF EXISTS "Managers can manage cards" ON nfc_cards;
 CREATE POLICY "Managers can manage cards"
   ON nfc_cards FOR ALL
   TO authenticated
@@ -108,11 +124,13 @@ CREATE POLICY "Managers can manage cards"
   );
 
 -- Discount Rules: toți pot citi, doar managerii pot modifica
+DROP POLICY IF EXISTS "Discount rules are viewable by authenticated users" ON discount_rules;
 CREATE POLICY "Discount rules are viewable by authenticated users"
   ON discount_rules FOR SELECT
   TO authenticated
   USING (true);
 
+DROP POLICY IF EXISTS "Managers can manage discount rules" ON discount_rules;
 CREATE POLICY "Managers can manage discount rules"
   ON discount_rules FOR ALL
   TO authenticated
@@ -121,11 +139,13 @@ CREATE POLICY "Managers can manage discount rules"
   );
 
 -- Visits Log: toți autentificați pot citi, barmanii/managerii pot crea
+DROP POLICY IF EXISTS "Visits are viewable by authenticated users" ON visits_log;
 CREATE POLICY "Visits are viewable by authenticated users"
   ON visits_log FOR SELECT
   TO authenticated
   USING (true);
 
+DROP POLICY IF EXISTS "Barmen and managers can create visits" ON visits_log;
 CREATE POLICY "Barmen and managers can create visits"
   ON visits_log FOR INSERT
   TO authenticated
@@ -137,11 +157,13 @@ CREATE POLICY "Barmen and managers can create visits"
   );
 
 -- Announcements: toți pot citi, doar managerii pot crea
+DROP POLICY IF EXISTS "Announcements are viewable by authenticated users" ON announcements;
 CREATE POLICY "Announcements are viewable by authenticated users"
   ON announcements FOR SELECT
   TO authenticated
   USING (true);
 
+DROP POLICY IF EXISTS "Managers can manage announcements" ON announcements;
 CREATE POLICY "Managers can manage announcements"
   ON announcements FOR ALL
   TO authenticated
