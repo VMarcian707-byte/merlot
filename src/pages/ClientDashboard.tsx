@@ -33,7 +33,15 @@ export default function ClientDashboard() {
   });
 
   const dayNames = ['Dum', 'Lun', 'Mar', 'Mie', 'Joi', 'Vin', 'Sâm'];
-  const fullName = currentUser.name.split(' ');
+  
+  // Verifică dacă name este email și extrage numele real
+  const isNameEmail = currentUser.name.includes('@');
+  const displayName = isNameEmail 
+    ? currentUser.email.split('@')[0].split('.').map(part => 
+        part.charAt(0).toUpperCase() + part.slice(1)
+      ).join(' ')
+    : currentUser.name;
+  const fullName = displayName.split(' ');
   const firstName = fullName[0];
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
@@ -129,7 +137,7 @@ export default function ClientDashboard() {
                         Merlot VIP Card
                       </p>
                     </div>
-                    <h3 className="font-display text-xl text-white">{currentUser.name}</h3>
+                    <h3 className="font-display text-xl text-white">{displayName}</h3>
                     <p className="text-white/30 text-xs mt-1 tracking-wider">{currentUser.phone}</p>
                   </div>
                   <div className="text-4xl">{currentUser.avatar}</div>

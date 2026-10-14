@@ -31,6 +31,14 @@ export default function AdminPanel() {
 
   if (!currentUser) return null;
 
+  // Verifică dacă name este email și extrage numele real
+  const isNameEmail = currentUser.name.includes('@');
+  const displayName = isNameEmail 
+    ? currentUser.email.split('@')[0].split('.').map(part => 
+        part.charAt(0).toUpperCase() + part.slice(1)
+      ).join(' ')
+    : currentUser.name;
+
   const clients = users.filter(u => u.role === 'client');
   const activeCards = nfcCards.filter(c => c.status === 'active');
   const unassignedCards = nfcCards.filter(c => c.status === 'unassigned');

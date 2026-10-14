@@ -20,6 +20,14 @@ export default function BarmanScanner() {
 
   if (!currentUser) return null;
 
+  // Verifică dacă name este email și extrage numele real
+  const isNameEmail = currentUser.name.includes('@');
+  const displayName = isNameEmail 
+    ? currentUser.email.split('@')[0].split('.').map(part => 
+        part.charAt(0).toUpperCase() + part.slice(1)
+      ).join(' ')
+    : currentUser.name;
+
   const handleNFCSimulate = async (cardUuid: string) => {
     setScanning(true);
     setResult(null);
@@ -84,7 +92,7 @@ export default function BarmanScanner() {
               <p className="font-accent text-[#D4AF37]/60 text-xs tracking-[0.3em] uppercase italic mb-1">
                 Staff Access
               </p>
-              <h1 className="font-display text-xl text-white">{currentUser.name}</h1>
+              <h1 className="font-display text-xl text-white">{displayName}</h1>
             </div>
             <div className="flex items-center gap-3">
               <div className="glass rounded-xl px-3 py-2 flex items-center gap-2">
