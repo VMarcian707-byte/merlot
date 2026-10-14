@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import { useStore } from '../store';
-import { CreditCard, Bell, Calendar, History, LogOut, MapPin, Clock, Percent, PartyPopper, ChevronRight, Wifi } from 'lucide-react';
+import { LuxuryBackground, OrnamentDivider, GoldBadge, LuxuryCard, NoiseOverlay } from '../components/LuxuryUI';
+import { 
+  CreditCard, Bell, Calendar, History, LogOut, Clock, Percent, 
+  PartyPopper, Wifi, Crown, Star, Sparkles, ChevronRight, MapPin,
+  Wine, Gem
+} from 'lucide-react';
 
 type Tab = 'card' | 'events' | 'history' | 'benefits';
 
@@ -26,127 +31,215 @@ export default function ClientDashboard() {
     return false;
   });
 
+  const dayNames = ['Dum', 'Lun', 'Mar', 'Mie', 'Joi', 'Vin', 'Sâm'];
+  const fullName = currentUser.name.split(' ');
+  const firstName = fullName[0];
+
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: 'card', label: 'Card', icon: <CreditCard className="w-5 h-5" /> },
+    { id: 'card', label: 'Cardul Meu', icon: <CreditCard className="w-5 h-5" /> },
     { id: 'benefits', label: 'Beneficii', icon: <Percent className="w-5 h-5" /> },
     { id: 'events', label: 'Evenimente', icon: <PartyPopper className="w-5 h-5" /> },
     { id: 'history', label: 'Istoric', icon: <History className="w-5 h-5" /> },
   ];
 
-  const dayNames = ['Dum', 'Lun', 'Mar', 'Mie', 'Joi', 'Vin', 'Sâm'];
-
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white pb-20">
-      {/* Header */}
-      <div className="bg-gradient-to-br from-[#722F37] via-[#5a252c] to-[#3d1a1f] px-5 pt-6 pb-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-40 h-40 bg-[#C4A35A]/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-[#C4A35A]/5 rounded-full translate-y-1/2 -translate-x-1/2" />
-        <div className="relative flex justify-between items-start">
-          <div>
-            <p className="text-[#C4A35A] text-xs uppercase tracking-widest mb-1">Bine ai venit</p>
-            <h1 className="text-xl font-bold">{currentUser.name}</h1>
-            <p className="text-white/60 text-sm mt-0.5">{currentUser.phone}</p>
-          </div>
-          <button onClick={logout} className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition">
-            <LogOut className="w-5 h-5 text-white/80" />
-          </button>
-        </div>
+    <div className="min-h-screen min-h-[100dvh] relative pb-24">
+      <LuxuryBackground />
+      <NoiseOverlay />
 
-        {/* Notification badge */}
-        {myAnnouncements.length > 0 && (
-          <div className="mt-4 flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
-            <Bell className="w-4 h-4 text-[#C4A35A]" />
-            <span className="text-sm text-white/90">{myAnnouncements.length} notificări noi</span>
-          </div>
-        )}
-      </div>
-
-      {/* Content */}
-      <div className="px-4 -mt-4">
-        {activeTab === 'card' && (
-          <div className="space-y-4">
-            {/* VIP Card */}
-            <div className="bg-gradient-to-br from-[#1a1a1a] to-[#111] border border-[#333] rounded-2xl p-5 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-[#722F37]/20 to-transparent rounded-bl-full" />
-              <div className="flex justify-between items-start mb-6">
-                <div>
-                  <p className="text-[#C4A35A] text-xs uppercase tracking-widest">Merlot VIP Card</p>
-                  <p className="text-white text-lg font-bold mt-1">{currentUser.name}</p>
+      {/* Hero Header */}
+      <div className="relative z-10">
+        <div className="bg-gradient-to-b from-[#1a0d12]/80 via-[#1a0d12]/40 to-transparent backdrop-blur-xl">
+          <div className="px-5 pt-6 pb-8">
+            {/* Top bar */}
+            <div className="flex justify-between items-start mb-8 animate-fade-in">
+              <div>
+                <p className="font-accent text-[#D4AF37]/60 text-xs tracking-[0.3em] uppercase italic mb-1">
+                  Bine ai venit
+                </p>
+                <h1 className="font-display text-3xl text-white font-medium">
+                  {firstName}
+                </h1>
+                <div className="flex items-center gap-2 mt-2">
+                  <Crown className="w-3 h-3 text-[#D4AF37]" />
+                  <span className="text-xs text-[#D4AF37]/70 tracking-wider uppercase">Member VIP</span>
                 </div>
-                <div className="text-3xl">{currentUser.avatar}</div>
               </div>
-              <div className="flex items-center gap-2 mb-4">
-                <Wifi className="w-4 h-4 text-[#C4A35A]" />
-                <span className="text-xs text-gray-400 font-mono">{myCard?.card_uuid || 'N/A'}</span>
-              </div>
-              <div className="flex justify-between items-end">
-                <div>
-                  <p className="text-xs text-gray-500">Status</p>
-                  <p className={`text-sm font-semibold ${myCard?.status === 'active' ? 'text-green-400' : 'text-red-400'}`}>
-                    {myCard?.status === 'active' ? '● Activ' : '○ Inactiv'}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-gray-500">Vizite totale</p>
-                  <p className="text-2xl font-bold text-[#C4A35A]">{myVisits.length}</p>
-                </div>
+              <div className="flex items-center gap-3">
+                {myAnnouncements.length > 0 && (
+                  <div className="relative">
+                    <div className="w-10 h-10 rounded-full glass flex items-center justify-center">
+                      <Bell className="w-4 h-4 text-[#D4AF37]" />
+                    </div>
+                    <div className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-[#D4AF37] flex items-center justify-center">
+                      <span className="text-[9px] text-[#0a0608] font-bold">{myAnnouncements.length}</span>
+                    </div>
+                  </div>
+                )}
+                <button 
+                  onClick={logout} 
+                  className="w-10 h-10 rounded-full glass flex items-center justify-center hover:border-[#D4AF37]/30 transition-all duration-300"
+                >
+                  <LogOut className="w-4 h-4 text-white/50" />
+                </button>
               </div>
             </div>
 
             {/* Active Discount Alert */}
             {activeDiscounts.length > 0 && (
-              <div className="bg-gradient-to-r from-[#722F37]/20 to-[#C4A35A]/10 border border-[#722F37]/30 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Percent className="w-5 h-5 text-[#C4A35A]" />
-                  <span className="text-sm font-semibold text-[#C4A35A]">Reducere activă acum!</span>
-                </div>
-                {activeDiscounts.map(d => (
-                  <div key={d.id} className="flex justify-between items-center mt-2">
-                    <span className="text-sm text-white/80">{d.name}</span>
-                    <span className="text-lg font-bold text-green-400">-{d.discount_percentage}%</span>
+              <div className="animate-slide-up stagger-1">
+                <div className="relative overflow-hidden rounded-2xl border border-[#D4AF37]/20 bg-gradient-to-r from-[#D4AF37]/10 via-[#722F37]/10 to-[#D4AF37]/10 p-4">
+                  <div className="absolute inset-0 animate-shimmer opacity-30" />
+                  <div className="relative flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-[#D4AF37]/20 flex items-center justify-center flex-shrink-0">
+                      <Sparkles className="w-5 h-5 text-[#D4AF37]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-[#D4AF37]/80 tracking-wider uppercase mb-0.5">Reducere activă acum</p>
+                      <p className="text-white font-medium text-sm truncate">{activeDiscounts[0].name}</p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-2xl font-display font-bold text-[#D4AF37]">
+                        -{activeDiscounts[0].discount_percentage}%
+                      </p>
+                    </div>
                   </div>
-                ))}
+                </div>
               </div>
             )}
+          </div>
+        </div>
+      </div>
 
-            {/* Quick Stats */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-[#1a1a1a] border border-[#222] rounded-xl p-4">
-                <p className="text-xs text-gray-500 mb-1">Total vizite</p>
-                <p className="text-2xl font-bold text-white">{myVisits.length}</p>
+      {/* Content Area */}
+      <div className="relative z-10 px-5 -mt-2">
+        {activeTab === 'card' && (
+          <div className="space-y-5 animate-fade-in">
+            {/* VIP Card */}
+            <div className="card-vip animate-slide-up stagger-2">
+              <div className="relative z-10">
+                {/* Card header */}
+                <div className="flex justify-between items-start mb-8">
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Gem className="w-4 h-4 text-[#D4AF37]" />
+                      <p className="font-accent text-[#D4AF37]/80 text-xs tracking-[0.3em] uppercase italic">
+                        Merlot VIP Card
+                      </p>
+                    </div>
+                    <h3 className="font-display text-xl text-white">{currentUser.name}</h3>
+                    <p className="text-white/30 text-xs mt-1 tracking-wider">{currentUser.phone}</p>
+                  </div>
+                  <div className="text-4xl">{currentUser.avatar}</div>
+                </div>
+
+                {/* Card number */}
+                <div className="mb-8">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Wifi className="w-3 h-3 text-[#D4AF37]/50" />
+                    <span className="text-[10px] text-white/30 tracking-wider uppercase">NFC ID</span>
+                  </div>
+                  <p className="font-mono text-xs text-white/50 tracking-wider">
+                    {myCard?.card_uuid || 'N/A'}
+                  </p>
+                </div>
+
+                {/* Card footer */}
+                <div className="flex justify-between items-end pt-6 border-t border-white/5">
+                  <div>
+                    <p className="text-[10px] text-white/30 tracking-wider uppercase mb-1">Status</p>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${myCard?.status === 'active' ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
+                      <span className={`text-sm font-medium ${myCard?.status === 'active' ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {myCard?.status === 'active' ? 'Activ' : 'Inactiv'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] text-white/30 tracking-wider uppercase mb-1">Vizite</p>
+                    <p className="text-3xl font-display font-bold text-gradient-gold">{myVisits.length}</p>
+                  </div>
+                </div>
               </div>
-              <div className="bg-[#1a1a1a] border border-[#222] rounded-xl p-4">
-                <p className="text-xs text-gray-500 mb-1">Reduceri aplicate</p>
-                <p className="text-2xl font-bold text-[#C4A35A]">{myVisits.filter(v => v.discount_applied > 0).length}</p>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 gap-3 animate-slide-up stagger-3">
+              <div className="card-luxury text-center">
+                <div className="w-10 h-10 mx-auto rounded-full bg-gradient-to-br from-[#D4AF37]/10 to-transparent flex items-center justify-center mb-3">
+                  <Star className="w-5 h-5 text-[#D4AF37]" />
+                </div>
+                <p className="text-2xl font-display font-bold text-white">{myVisits.length}</p>
+                <p className="text-[10px] text-white/40 tracking-wider uppercase mt-1">Total Vizite</p>
+              </div>
+              <div className="card-luxury text-center">
+                <div className="w-10 h-10 mx-auto rounded-full bg-gradient-to-br from-emerald-400/10 to-transparent flex items-center justify-center mb-3">
+                  <Percent className="w-5 h-5 text-emerald-400" />
+                </div>
+                <p className="text-2xl font-display font-bold text-white">
+                  {myVisits.filter(v => v.discount_applied > 0).length}
+                </p>
+                <p className="text-[10px] text-white/40 tracking-wider uppercase mt-1">Reduceri Primite</p>
+              </div>
+            </div>
+
+            {/* Member since */}
+            <div className="card-luxury animate-slide-up stagger-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#722F37]/20 to-transparent flex items-center justify-center">
+                  <Wine className="w-5 h-5 text-[#C4A35A]" />
+                </div>
+                <div>
+                  <p className="text-xs text-white/40 tracking-wider uppercase">Membru din</p>
+                  <p className="text-sm text-white font-medium">
+                    {new Date(currentUser.created_at).toLocaleDateString('ro-RO', { 
+                      day: 'numeric', month: 'long', year: 'numeric' 
+                    })}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         )}
 
         {activeTab === 'benefits' && (
-          <div className="space-y-3">
-            <h2 className="text-lg font-bold mb-4">Beneficiile tale VIP</h2>
-            {discountRules.map(rule => (
-              <div key={rule.id} className={`bg-[#1a1a1a] border rounded-xl p-4 ${rule.is_active ? 'border-[#333]' : 'border-[#222] opacity-50'}`}>
+          <div className="space-y-4 animate-fade-in">
+            <div className="text-center mb-6 animate-slide-up">
+              <p className="font-accent text-[#D4AF37]/60 text-xs tracking-[0.3em] uppercase italic mb-2">
+                Exclusiv pentru tine
+              </p>
+              <h2 className="font-display text-2xl text-white">Beneficiile Tale VIP</h2>
+            </div>
+
+            {discountRules.map((rule, idx) => (
+              <div 
+                key={rule.id} 
+                className={`card-luxury animate-slide-up ${idx === 0 ? 'stagger-1' : idx === 1 ? 'stagger-2' : 'stagger-3'}`}
+              >
                 <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-semibold text-white">{rule.name}</h3>
-                    <p className="text-sm text-gray-400 mt-1">{rule.description}</p>
-                    <div className="flex items-center gap-3 mt-2">
-                      <div className="flex items-center gap-1 text-xs text-gray-500">
-                        <Clock className="w-3 h-3" />
-                        <span>{rule.start_time} - {rule.end_time}</span>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="font-display text-lg text-white">{rule.name}</h3>
+                      {rule.is_active && (
+                        <GoldBadge>Activ</GoldBadge>
+                      )}
+                    </div>
+                    <p className="text-sm text-white/50 mb-4">{rule.description}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+                        <Clock className="w-3 h-3 text-[#D4AF37]/60" />
+                        <span className="text-xs text-white/60">{rule.start_time} — {rule.end_time}</span>
                       </div>
-                      <div className="flex items-center gap-1 text-xs text-gray-500">
-                        <Calendar className="w-3 h-3" />
-                        <span>{rule.valid_days.map(d => dayNames[d]).join(', ')}</span>
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+                        <Calendar className="w-3 h-3 text-[#D4AF37]/60" />
+                        <span className="text-xs text-white/60">{rule.valid_days.map(d => dayNames[d]).join(', ')}</span>
                       </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <span className={`text-2xl font-bold ${rule.is_active ? 'text-green-400' : 'text-gray-600'}`}>
+                  <div className="text-right ml-4 flex-shrink-0">
+                    <p className={`text-3xl font-display font-bold ${rule.is_active ? 'text-gradient-gold' : 'text-white/20'}`}>
                       -{rule.discount_percentage}%
-                    </span>
+                    </p>
                   </div>
                 </div>
               </div>
@@ -155,29 +248,48 @@ export default function ClientDashboard() {
         )}
 
         {activeTab === 'events' && (
-          <div className="space-y-3">
-            <h2 className="text-lg font-bold mb-4">Evenimente & Anunțuri</h2>
+          <div className="space-y-4 animate-fade-in">
+            <div className="text-center mb-6 animate-slide-up">
+              <p className="font-accent text-[#D4AF37]/60 text-xs tracking-[0.3em] uppercase italic mb-2">
+                Experiențe exclusive
+              </p>
+              <h2 className="font-display text-2xl text-white">Evenimente & Party-uri</h2>
+            </div>
+
             {myAnnouncements.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                <PartyPopper className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p>Niciun eveniment momentan</p>
+              <div className="card-luxury text-center py-16 animate-slide-up stagger-1">
+                <PartyPopper className="w-12 h-12 mx-auto mb-4 text-white/10" />
+                <p className="text-white/30 text-sm">Niciun eveniment momentan</p>
+                <p className="text-white/20 text-xs mt-1">Revino curând pentru noutăți</p>
               </div>
             ) : (
-              myAnnouncements.map(ann => (
-                <div key={ann.id} className="bg-[#1a1a1a] border border-[#333] rounded-xl p-4 hover:border-[#722F37]/50 transition">
-                  <div className="flex justify-between items-start">
-                    <h3 className="font-semibold text-white text-sm">{ann.title}</h3>
-                    <span className="text-xs bg-[#722F37]/20 text-[#C4A35A] px-2 py-0.5 rounded-full">
-                      {ann.target === 'vip' ? 'VIP' : 'Toți'}
-                    </span>
+              myAnnouncements.map((ann, idx) => (
+                <div 
+                  key={ann.id} 
+                  className={`card-luxury animate-slide-up ${idx === 0 ? 'stagger-1' : idx === 1 ? 'stagger-2' : 'stagger-3'}`}
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className="font-display text-lg text-white flex-1 pr-4">{ann.title}</h3>
+                    <GoldBadge>{ann.target === 'vip' ? 'VIP' : 'Toți'}</GoldBadge>
                   </div>
-                  <p className="text-sm text-gray-400 mt-2">{ann.message}</p>
-                  <div className="flex items-center gap-2 mt-3 text-xs text-gray-500">
-                    <Calendar className="w-3 h-3" />
-                    <span>{new Date(ann.event_date).toLocaleDateString('ro-RO', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
-                    <span className="mx-1">•</span>
-                    <Clock className="w-3 h-3" />
-                    <span>{new Date(ann.event_date).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}</span>
+                  <p className="text-sm text-white/50 leading-relaxed mb-4">{ann.message}</p>
+                  <div className="flex items-center gap-4 pt-4 border-t border-white/5">
+                    <div className="flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-[#D4AF37]/60" />
+                      <span className="text-xs text-white/40">
+                        {new Date(ann.event_date).toLocaleDateString('ro-RO', { 
+                          weekday: 'short', day: 'numeric', month: 'short' 
+                        })}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-[#D4AF37]/60" />
+                      <span className="text-xs text-white/40">
+                        {new Date(ann.event_date).toLocaleTimeString('ro-RO', { 
+                          hour: '2-digit', minute: '2-digit' 
+                        })}
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))
@@ -186,56 +298,89 @@ export default function ClientDashboard() {
         )}
 
         {activeTab === 'history' && (
-          <div className="space-y-3">
-            <h2 className="text-lg font-bold mb-4">Istoric vizite</h2>
+          <div className="space-y-4 animate-fade-in">
+            <div className="text-center mb-6 animate-slide-up">
+              <p className="font-accent text-[#D4AF37]/60 text-xs tracking-[0.3em] uppercase italic mb-2">
+                Amintirile tale
+              </p>
+              <h2 className="font-display text-2xl text-white">Istoric Vizite</h2>
+            </div>
+
             {myVisits.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                <History className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p>Nicio vizită înregistrată</p>
+              <div className="card-luxury text-center py-16 animate-slide-up stagger-1">
+                <History className="w-12 h-12 mx-auto mb-4 text-white/10" />
+                <p className="text-white/30 text-sm">Nicio vizită înregistrată</p>
+                <p className="text-white/20 text-xs mt-1">Vizitează-ne pentru a acumula experiențe</p>
               </div>
             ) : (
-              [...myVisits].reverse().map(visit => (
-                <div key={visit.id} className="bg-[#1a1a1a] border border-[#222] rounded-xl p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${visit.discount_applied > 0 ? 'bg-green-500/10' : 'bg-gray-500/10'}`}>
-                      <MapPin className={`w-5 h-5 ${visit.discount_applied > 0 ? 'text-green-400' : 'text-gray-400'}`} />
+              <div className="space-y-2">
+                {[...myVisits].reverse().map((visit, idx) => (
+                  <div 
+                    key={visit.id} 
+                    className={`card-luxury flex items-center justify-between animate-slide-up ${idx < 5 ? `stagger-${idx + 1}` : ''}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        visit.discount_applied > 0 
+                          ? 'bg-gradient-to-br from-emerald-400/20 to-transparent' 
+                          : 'bg-white/[0.03]'
+                      }`}>
+                        <MapPin className={`w-4 h-4 ${visit.discount_applied > 0 ? 'text-emerald-400' : 'text-white/30'}`} />
+                      </div>
+                      <div>
+                        <p className="text-sm text-white font-medium">
+                          {new Date(visit.scanned_at).toLocaleDateString('ro-RO', { 
+                            day: 'numeric', month: 'short', year: 'numeric' 
+                          })}
+                        </p>
+                        <p className="text-xs text-white/30">
+                          {new Date(visit.scanned_at).toLocaleTimeString('ro-RO', { 
+                            hour: '2-digit', minute: '2-digit' 
+                          })}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm text-white font-medium">
-                        {new Date(visit.scanned_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(visit.scanned_at).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}
-                      </p>
+                    <div className="text-right">
+                      {visit.discount_applied > 0 ? (
+                        <span className="text-lg font-display font-bold text-emerald-400">
+                          -{visit.discount_applied}%
+                        </span>
+                      ) : (
+                        <span className="text-xs text-white/30 tracking-wider uppercase">Standard</span>
+                      )}
                     </div>
                   </div>
-                  <div className="text-right">
-                    {visit.discount_applied > 0 ? (
-                      <span className="text-sm font-semibold text-green-400">-{visit.discount_applied}%</span>
-                    ) : (
-                      <span className="text-xs text-gray-500">Fără reducere</span>
-                    )}
-                  </div>
-                </div>
-              ))
+                ))}
+              </div>
             )}
           </div>
         )}
       </div>
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#111]/95 backdrop-blur-xl border-t border-[#222] px-2 py-2">
-        <div className="flex justify-around">
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all ${activeTab === tab.id ? 'text-[#C4A35A] bg-[#722F37]/10' : 'text-gray-500 hover:text-gray-300'}`}
-            >
-              {tab.icon}
-              <span className="text-[10px]">{tab.label}</span>
-            </button>
-          ))}
+      <div className="fixed bottom-0 left-0 right-0 z-50">
+        <div className="glass-dark border-t border-white/[0.05] px-3 py-3">
+          <div className="flex justify-around max-w-md mx-auto">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl transition-all duration-500 ${
+                  activeTab === tab.id 
+                    ? 'text-[#D4AF37]' 
+                    : 'text-white/30 hover:text-white/50'
+                }`}
+              >
+                <div className={`transition-transform duration-500 ${activeTab === tab.id ? 'scale-110' : ''}`}>
+                  {tab.icon}
+                </div>
+                <span className="text-[9px] tracking-wider uppercase">{tab.label}</span>
+                {activeTab === tab.id && (
+                  <div className="absolute -bottom-0 w-8 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent rounded-full" />
+                )}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../store';
-import { ScanLine, Check, X, LogOut, Clock, User, CreditCard, Wifi, AlertTriangle, History } from 'lucide-react';
+import { LuxuryBackground, OrnamentDivider, GoldBadge, LuxuryCard, NoiseOverlay, LuxuryInput, LuxuryButton } from '../components/LuxuryUI';
+import { ScanLine, Check, X, LogOut, Clock, Wifi, AlertTriangle, History, User, CreditCard, Sparkles, Shield, Activity } from 'lucide-react';
 import { ScanResult } from '../types';
 
 export default function BarmanScanner() {
@@ -26,7 +27,7 @@ export default function BarmanScanner() {
       const scanResult = scanCard(cardUuid, currentUser.id);
       setResult(scanResult);
       setScanning(false);
-    }, 1200);
+    }, 1500);
   };
 
   const handleManualScan = (e: React.FormEvent) => {
@@ -38,7 +39,7 @@ export default function BarmanScanner() {
 
   const startNFCScan = async () => {
     if (!('NDEFReader' in window)) {
-      alert('Web NFC nu este suportat pe acest browser. Folosește Chrome pe Android sau introdu UUID-ul manual.');
+      alert('Web NFC nu este suportat. Folosește Chrome pe Android sau introdu UUID-ul manual.');
       return;
     }
     try {
@@ -60,7 +61,6 @@ export default function BarmanScanner() {
       };
     } catch (err) {
       setScanning(false);
-      console.error('NFC Error:', err);
     }
   };
 
@@ -72,73 +72,116 @@ export default function BarmanScanner() {
   const recentVisits = [...visitsLog].reverse().slice(0, 10);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white">
+    <div className="min-h-screen min-h-[100dvh] relative">
+      <LuxuryBackground />
+      <NoiseOverlay />
+
       {/* Header */}
-      <div className="bg-[#111] border-b border-[#222] px-5 py-4">
-        <div className="flex justify-between items-center">
-          <div>
-            <p className="text-[#C4A35A] text-xs uppercase tracking-widest">Barman Scanner</p>
-            <h1 className="text-lg font-bold">{currentUser.name}</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="bg-[#222] rounded-lg px-3 py-1.5 text-xs text-gray-400">
-              Vizite azi: <span className="text-white font-bold">{todayVisits.length}</span>
+      <div className="relative z-10 glass-dark border-b border-white/[0.05]">
+        <div className="px-5 py-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <p className="font-accent text-[#D4AF37]/60 text-xs tracking-[0.3em] uppercase italic mb-1">
+                Staff Access
+              </p>
+              <h1 className="font-display text-xl text-white">{currentUser.name}</h1>
             </div>
-            <button onClick={logout} className="p-2 rounded-lg bg-[#222] hover:bg-[#333] transition">
-              <LogOut className="w-4 h-4 text-gray-400" />
-            </button>
+            <div className="flex items-center gap-3">
+              <div className="glass rounded-xl px-3 py-2 flex items-center gap-2">
+                <Activity className="w-3.5 h-3.5 text-[#D4AF37]" />
+                <span className="text-xs text-white/60">
+                  Azi: <span className="text-white font-semibold">{todayVisits.length}</span>
+                </span>
+              </div>
+              <button 
+                onClick={logout} 
+                className="w-9 h-9 rounded-full glass flex items-center justify-center hover:border-[#D4AF37]/30 transition-all duration-300"
+              >
+                <LogOut className="w-4 h-4 text-white/40" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="p-4 space-y-4">
+      {/* Content */}
+      <div className="relative z-10 p-5 space-y-5">
         {/* Scanner Zone */}
-        <div className="bg-[#1a1a1a] border border-[#333] rounded-2xl p-6 text-center">
-          <div className={`w-24 h-24 mx-auto rounded-full flex items-center justify-center mb-4 ${scanning ? 'bg-[#722F37]/20 animate-pulse' : 'bg-[#222]'}`}>
-            {scanning ? (
-              <Wifi className="w-10 h-10 text-[#C4A35A] animate-ping" />
-            ) : (
-              <ScanLine className="w-10 h-10 text-gray-400" />
-            )}
+        <div className="card-luxury text-center animate-slide-up">
+          <div className="mb-6">
+            <p className="font-accent text-[#D4AF37]/60 text-xs tracking-[0.3em] uppercase italic mb-2">
+              Verificare Card
+            </p>
+            <h2 className="font-display text-xl text-white">Scanare NFC</h2>
           </div>
-          <p className="text-sm text-gray-400 mb-4">
-            {scanning ? 'Se scanează cardul NFC...' : 'Apropie cardul NFC de telefon sau introdu UUID-ul manual'}
+
+          {/* Scanner Visual */}
+          <div className="relative mx-auto w-32 h-32 mb-6">
+            {/* Outer rings */}
+            <div className={`absolute inset-0 rounded-full border border-[#D4AF37]/20 ${scanning ? 'animate-pulse-gold' : ''}`} />
+            <div className={`absolute inset-[-8px] rounded-full border border-[#D4AF37]/10 ${scanning ? 'animate-ping' : ''}`} style={{ animationDuration: '2s' }} />
+            <div className={`absolute inset-[-16px] rounded-full border border-[#D4AF37]/5 ${scanning ? 'animate-ping' : ''}`} style={{ animationDuration: '2.5s' }} />
+            
+            {/* Center icon */}
+            <div className={`absolute inset-0 rounded-full flex items-center justify-center ${
+              scanning 
+                ? 'bg-gradient-to-br from-[#D4AF37]/20 to-[#722F37]/20' 
+                : 'bg-white/[0.03]'
+            } transition-all duration-500`}>
+              {scanning ? (
+                <Wifi className="w-10 h-10 text-[#D4AF37] animate-pulse" />
+              ) : (
+                <ScanLine className="w-10 h-10 text-white/30" />
+              )}
+            </div>
+          </div>
+
+          <p className="text-sm text-white/40 mb-6">
+            {scanning ? (
+              <span className="text-[#D4AF37]">Se citește cardul NFC...</span>
+            ) : (
+              'Apropie cardul de telefon sau introdu UUID-ul'
+            )}
           </p>
 
-          {/* NFC Button */}
-          <div className="flex gap-2 justify-center mb-4">
+          {/* Action Buttons */}
+          <div className="flex gap-3 justify-center mb-6">
             <button
               onClick={startNFCScan}
               disabled={scanning}
-              className="bg-gradient-to-r from-[#722F37] to-[#8B3A42] text-white px-6 py-3 rounded-xl font-semibold hover:from-[#8B3A42] hover:to-[#722F37] transition-all disabled:opacity-50 flex items-center gap-2"
+              className="btn-luxury flex items-center gap-2 disabled:opacity-50"
             >
               <Wifi className="w-4 h-4" />
               Scanare NFC
             </button>
             <button
               onClick={() => setShowHistory(!showHistory)}
-              className="bg-[#222] text-gray-300 px-4 py-3 rounded-xl font-medium hover:bg-[#333] transition flex items-center gap-2"
+              className="px-5 py-3 rounded-xl glass text-white/60 hover:text-[#D4AF37] hover:border-[#D4AF37]/20 transition-all duration-300 flex items-center gap-2 text-sm"
             >
               <History className="w-4 h-4" />
               Istoric
             </button>
           </div>
 
+          <OrnamentDivider className="mb-6" />
+
           {/* Manual UUID Input */}
-          <form onSubmit={handleManualScan} className="mt-4">
-            <label className="block text-xs text-gray-500 mb-1.5 uppercase tracking-wide text-left">Introducere manuală UUID card:</label>
+          <form onSubmit={handleManualScan} className="text-left">
+            <label className="block text-[10px] text-white/30 tracking-[0.2em] uppercase mb-2">
+              Introducere Manuală UUID
+            </label>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={manualUuid}
                 onChange={e => setManualUuid(e.target.value)}
-                placeholder="A1B2C3D4-E5F6-7890-ABCD-EF1234567890"
-                className="flex-1 bg-[#0a0a0a] border border-[#333] rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:border-[#722F37] outline-none font-mono"
+                placeholder="A1B2C3D4-E5F6-7890-..."
+                className="input-luxury font-mono text-xs flex-1"
               />
               <button
                 type="submit"
                 disabled={!manualUuid.trim() || scanning}
-                className="bg-[#722F37] text-white px-4 py-2.5 rounded-lg font-medium hover:bg-[#8B3A42] transition disabled:opacity-50"
+                className="px-4 py-3 rounded-xl bg-gradient-to-r from-[#722F37] to-[#8B3A42] text-white text-sm font-medium hover:from-[#8B3A42] hover:to-[#722F37] transition-all disabled:opacity-50"
               >
                 Verifică
               </button>
@@ -146,19 +189,22 @@ export default function BarmanScanner() {
           </form>
 
           {/* Quick Test Cards */}
-          <div className="mt-4 pt-4 border-t border-[#222]">
-            <p className="text-xs text-gray-600 mb-2">Test rapid (carduri demo):</p>
+          <div className="mt-6 pt-6 border-t border-white/5">
+            <p className="text-[10px] text-white/20 tracking-[0.2em] uppercase mb-3">Test Rapid</p>
             <div className="flex flex-wrap gap-2 justify-center">
-              {nfcCards.filter(c => c.status === 'active').slice(0, 3).map(card => {
+              {nfcCards.filter(c => c.status === 'active').slice(0, 4).map(card => {
                 const client = users.find(u => u.id === card.assigned_user_id);
                 return (
                   <button
                     key={card.id}
                     onClick={() => handleNFCSimulate(card.card_uuid)}
                     disabled={scanning}
-                    className="bg-[#222] border border-[#333] rounded-lg px-3 py-2 text-xs text-gray-300 hover:border-[#722F37] hover:text-white transition disabled:opacity-50"
+                    className="group flex items-center gap-2 px-3 py-2 rounded-xl glass hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/5 transition-all duration-300 disabled:opacity-50"
                   >
-                    {client?.avatar} {client?.name?.split(' ')[0]}
+                    <span className="text-base">{client?.avatar}</span>
+                    <span className="text-xs text-white/50 group-hover:text-[#D4AF37] transition-colors">
+                      {client?.name?.split(' ')[0]}
+                    </span>
                   </button>
                 );
               })}
@@ -168,85 +214,109 @@ export default function BarmanScanner() {
 
         {/* Scan Result */}
         {result && (
-          <div className={`border rounded-2xl p-5 ${result.valid ? 'bg-green-500/5 border-green-500/30' : 'bg-red-500/5 border-red-500/30'}`}>
-            <div className="flex items-center gap-3 mb-4">
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${result.valid ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
-                {result.valid ? <Check className="w-6 h-6 text-green-400" /> : <X className="w-6 h-6 text-red-400" />}
+          <div className={`card-luxury animate-scale-in ${
+            result.valid 
+              ? 'border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-transparent' 
+              : 'border-red-500/20 bg-gradient-to-br from-red-500/5 to-transparent'
+          }`}>
+            {/* Result header */}
+            <div className="flex items-center gap-4 mb-6">
+              <div className={`w-14 h-14 rounded-full flex items-center justify-center ${
+                result.valid 
+                  ? 'bg-gradient-to-br from-emerald-400/20 to-transparent' 
+                  : 'bg-gradient-to-br from-red-400/20 to-transparent'
+              }`}>
+                {result.valid ? (
+                  <Check className="w-7 h-7 text-emerald-400" />
+                ) : (
+                  <X className="w-7 h-7 text-red-400" />
+                )}
               </div>
               <div>
-                <p className={`font-bold ${result.valid ? 'text-green-400' : 'text-red-400'}`}>
+                <p className={`font-display text-xl ${result.valid ? 'text-emerald-400' : 'text-red-400'}`}>
                   {result.valid ? 'Card Valid' : 'Card Invalid'}
                 </p>
-                <p className="text-xs text-gray-400">{result.message}</p>
+                <p className="text-xs text-white/40">{result.message}</p>
               </div>
             </div>
 
             {result.valid && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 bg-[#111] rounded-xl p-3">
-                  <span className="text-3xl">{result.client_avatar}</span>
+              <div className="space-y-4">
+                {/* Client info */}
+                <div className="flex items-center gap-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                  <span className="text-4xl">{result.client_avatar}</span>
                   <div>
-                    <p className="font-semibold text-white">{result.client_name}</p>
-                    <p className="text-xs text-gray-400">{result.client_phone}</p>
+                    <p className="font-display text-lg text-white">{result.client_name}</p>
+                    <p className="text-xs text-white/40">{result.client_phone}</p>
                   </div>
                 </div>
+
+                {/* Stats */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-[#111] rounded-xl p-3 text-center">
-                    <p className="text-xs text-gray-500">Reducere</p>
-                    <p className={`text-2xl font-bold ${result.discount_percentage > 0 ? 'text-green-400' : 'text-gray-400'}`}>
+                  <div className="text-center p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                    <p className="text-[10px] text-white/30 tracking-wider uppercase mb-1">Reducere</p>
+                    <p className={`text-3xl font-display font-bold ${
+                      result.discount_percentage > 0 ? 'text-emerald-400' : 'text-white/30'
+                    }`}>
                       {result.discount}
                     </p>
                   </div>
-                  <div className="bg-[#111] rounded-xl p-3 text-center">
-                    <p className="text-xs text-gray-500">Vizite totale</p>
-                    <p className="text-2xl font-bold text-[#C4A35A]">{result.total_visits}</p>
+                  <div className="text-center p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                    <p className="text-[10px] text-white/30 tracking-wider uppercase mb-1">Vizite</p>
+                    <p className="text-3xl font-display font-bold text-[#D4AF37]">{result.total_visits}</p>
                   </div>
                 </div>
-                <div className="bg-[#111] rounded-xl p-3">
-                  <p className="text-xs text-gray-500">Regulă aplicată</p>
+
+                {/* Applied rule */}
+                <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                  <p className="text-[10px] text-white/30 tracking-wider uppercase mb-1">Regulă Aplicată</p>
                   <p className="text-sm text-white font-medium">{result.rule_name}</p>
                 </div>
               </div>
             )}
 
             {!result.valid && (
-              <div className="flex items-center gap-2 bg-red-500/10 rounded-xl p-3">
-                <AlertTriangle className="w-5 h-5 text-red-400" />
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-red-500/5 border border-red-500/20">
+                <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0" />
                 <p className="text-sm text-red-300">{result.message}</p>
               </div>
             )}
 
             <button
               onClick={() => setResult(null)}
-              className="w-full mt-4 bg-[#222] text-gray-300 py-2.5 rounded-xl font-medium hover:bg-[#333] transition"
+              className="w-full mt-6 py-3 rounded-xl glass text-white/60 hover:text-[#D4AF37] hover:border-[#D4AF37]/30 transition-all duration-300 text-sm tracking-wider uppercase"
             >
-              Scanează alt card
+              Scanează Alt Card
             </button>
           </div>
         )}
 
         {/* History */}
         {showHistory && (
-          <div className="bg-[#1a1a1a] border border-[#333] rounded-2xl p-4">
-            <h3 className="font-semibold text-white mb-3 flex items-center gap-2">
-              <History className="w-4 h-4 text-[#C4A35A]" />
-              Ultimele scanări
-            </h3>
+          <div className="card-luxury animate-slide-up">
+            <div className="flex items-center gap-2 mb-4">
+              <History className="w-4 h-4 text-[#D4AF37]" />
+              <h3 className="font-display text-lg text-white">Ultimele Scanări</h3>
+            </div>
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {recentVisits.map(visit => {
                 const client = users.find(u => u.id === visit.client_id);
                 return (
-                  <div key={visit.id} className="flex items-center justify-between bg-[#111] rounded-lg p-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">{client?.avatar || '🎫'}</span>
+                  <div key={visit.id} className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">{client?.avatar || '🎫'}</span>
                       <div>
                         <p className="text-sm text-white">{client?.name || 'Necunoscut'}</p>
-                        <p className="text-xs text-gray-500">
-                          {new Date(visit.scanned_at).toLocaleString('ro-RO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        <p className="text-xs text-white/30">
+                          {new Date(visit.scanned_at).toLocaleString('ro-RO', { 
+                            day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' 
+                          })}
                         </p>
                       </div>
                     </div>
-                    <span className={`text-sm font-bold ${visit.discount_applied > 0 ? 'text-green-400' : 'text-gray-500'}`}>
+                    <span className={`text-sm font-display font-bold ${
+                      visit.discount_applied > 0 ? 'text-emerald-400' : 'text-white/30'
+                    }`}>
                       {visit.discount_applied > 0 ? `-${visit.discount_applied}%` : '—'}
                     </span>
                   </div>

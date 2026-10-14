@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '../store';
-import { Wine, Shield, Smartphone, CreditCard } from 'lucide-react';
+import { LuxuryBackground, OrnamentDivider, LuxuryButton, LuxuryInput } from '../components/LuxuryUI';
+import { Wine, Shield, Smartphone, CreditCard, Sparkles, ArrowRight } from 'lucide-react';
 
 export default function LoginPage() {
   const { login, registerClient } = useStore();
@@ -10,165 +11,228 @@ export default function LoginPage() {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
+    await new Promise(r => setTimeout(r, 600));
     const success = login(email, password);
     if (!success) {
-      setError('Email sau parolă incorectă');
+      setError('Credențiale incorecte. Verificați email-ul și parola.');
     }
+    setIsLoading(false);
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     if (!name || !phone || !email) {
-      setError('Completați toate câmpurile');
+      setError('Completați toate câmpurile obligatorii');
       return;
     }
+    setIsLoading(true);
+    await new Promise(r => setTimeout(r, 800));
     registerClient(name, phone, email);
+    setIsLoading(false);
   };
 
-  const quickLogin = (email: string, pass: string) => {
-    setEmail(email);
-    setPassword(pass);
-    login(email, pass);
+  const quickLogin = (em: string, pass: string) => {
+    setIsLoading(true);
+    setTimeout(() => {
+      login(em, pass);
+      setIsLoading(false);
+    }, 500);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#1a0a0e] to-[#0a0a0a] flex flex-col items-center justify-center p-4">
-      {/* Logo */}
-      <div className="mb-8 text-center">
-        <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-[#722F37] to-[#C4A35A] flex items-center justify-center shadow-2xl shadow-[#722F37]/30">
-          <Wine className="w-10 h-10 text-white" />
-        </div>
-        <h1 className="text-3xl font-bold text-white tracking-tight">MERLOT</h1>
-        <p className="text-[#C4A35A] text-sm font-medium tracking-widest uppercase mt-1">VIP Fidelitate NFC</p>
-      </div>
+    <div className="min-h-screen min-h-[100dvh] relative flex flex-col items-center justify-center px-5 py-10">
+      <LuxuryBackground />
+      
+      {/* Main content */}
+      <div className="relative z-10 w-full max-w-md animate-fade-in">
+        {/* Logo & Branding */}
+        <div className="text-center mb-10">
+          {/* Logo mark */}
+          <div className="relative inline-block mb-6">
+            <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-[#722F37] to-[#3d1a1f] flex items-center justify-center glow-wine relative">
+              <Wine className="w-9 h-9 text-[#D4AF37]" strokeWidth={1.5} />
+              {/* Rotating ring */}
+              <div className="absolute inset-[-4px] rounded-full border border-[#D4AF37]/20 animate-rotate-slow" />
+              <div className="absolute inset-[-8px] rounded-full border border-[#D4AF37]/10" />
+            </div>
+            {/* Sparkle */}
+            <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-[#D4AF37] animate-pulse" />
+          </div>
 
-      {/* Card */}
-      <div className="w-full max-w-md bg-[#1a1a1a]/90 backdrop-blur-xl border border-[#333] rounded-2xl p-6 shadow-2xl">
-        {/* Tabs */}
-        <div className="flex gap-2 mb-6">
-          <button
-            onClick={() => { setMode('login'); setError(''); }}
-            className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${mode === 'login' ? 'bg-[#722F37] text-white' : 'bg-[#222] text-gray-400 hover:text-white'}`}
-          >
-            Autentificare
-          </button>
-          <button
-            onClick={() => { setMode('register'); setError(''); }}
-            className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${mode === 'register' ? 'bg-[#722F37] text-white' : 'bg-[#222] text-gray-400 hover:text-white'}`}
-          >
-            Înregistrare
-          </button>
+          {/* Brand name */}
+          <h1 className="font-display text-5xl md:text-6xl text-white font-medium tracking-tight mb-2">
+            Merlot
+          </h1>
+          <div className="ornament-line w-24 mx-auto mb-3" />
+          <p className="font-accent text-[#D4AF37]/80 text-sm tracking-[0.4em] uppercase italic">
+            VIP Experience
+          </p>
+          <p className="text-white/30 text-xs mt-3 tracking-wider">
+            Sistem exclusivist de fidelitate
+          </p>
         </div>
 
-        {mode === 'login' ? (
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="block text-xs text-gray-400 mb-1.5 uppercase tracking-wide">Email</label>
-              <input
+        {/* Login Card */}
+        <div className="card-luxury animate-slide-up">
+          {/* Tabs */}
+          <div className="flex mb-8 bg-white/[0.03] rounded-xl p-1">
+            <button
+              onClick={() => { setMode('login'); setError(''); }}
+              className={`flex-1 py-3 rounded-lg text-xs font-medium tracking-[0.15em] uppercase transition-all duration-500 ${
+                mode === 'login' 
+                  ? 'bg-gradient-to-r from-[#722F37] to-[#8B3A42] text-white shadow-lg' 
+                  : 'text-white/40 hover:text-white/60'
+              }`}
+            >
+              Autentificare
+            </button>
+            <button
+              onClick={() => { setMode('register'); setError(''); }}
+              className={`flex-1 py-3 rounded-lg text-xs font-medium tracking-[0.15em] uppercase transition-all duration-500 ${
+                mode === 'register' 
+                  ? 'bg-gradient-to-r from-[#722F37] to-[#8B3A42] text-white shadow-lg' 
+                  : 'text-white/40 hover:text-white/60'
+              }`}
+            >
+              Înregistrare
+            </button>
+          </div>
+
+          {mode === 'login' ? (
+            <form onSubmit={handleLogin} className="space-y-5">
+              <LuxuryInput
+                label="Email"
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="w-full bg-[#0a0a0a] border border-[#333] rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:border-[#722F37] focus:ring-1 focus:ring-[#722F37] outline-none transition"
                 placeholder="email@merlot.ro"
+                required
               />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-400 mb-1.5 uppercase tracking-wide">Parolă</label>
-              <input
+              <LuxuryInput
+                label="Parolă"
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full bg-[#0a0a0a] border border-[#333] rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:border-[#722F37] focus:ring-1 focus:ring-[#722F37] outline-none transition"
                 placeholder="••••••••"
+                required
               />
-            </div>
-            {error && <p className="text-red-400 text-sm">{error}</p>}
-            <button
-              type="submit"
-              className="w-full bg-gradient-to-r from-[#722F37] to-[#8B3A42] text-white py-3 rounded-lg font-semibold hover:from-[#8B3A42] hover:to-[#722F37] transition-all shadow-lg shadow-[#722F37]/20"
-            >
-              Intră în cont
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={handleRegister} className="space-y-4">
-            <div>
-              <label className="block text-xs text-gray-400 mb-1.5 uppercase tracking-wide">Nume complet</label>
-              <input
+              {error && (
+                <p className="text-red-400/80 text-xs text-center animate-fade-in">{error}</p>
+              )}
+              <LuxuryButton type="submit" variant="wine" className="w-full" disabled={isLoading}>
+                {isLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Se autentifică...
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    Accesează Contul <ArrowRight className="w-4 h-4" />
+                  </span>
+                )}
+              </LuxuryButton>
+            </form>
+          ) : (
+            <form onSubmit={handleRegister} className="space-y-5">
+              <LuxuryInput
+                label="Nume complet"
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
-                className="w-full bg-[#0a0a0a] border border-[#333] rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:border-[#722F37] focus:ring-1 focus:ring-[#722F37] outline-none transition"
                 placeholder="Nume Prenume"
+                required
               />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-400 mb-1.5 uppercase tracking-wide">Telefon</label>
-              <input
+              <LuxuryInput
+                label="Telefon"
                 type="tel"
                 value={phone}
                 onChange={e => setPhone(e.target.value)}
-                className="w-full bg-[#0a0a0a] border border-[#333] rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:border-[#722F37] focus:ring-1 focus:ring-[#722F37] outline-none transition"
                 placeholder="+40 7XX XXX XXX"
+                required
               />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-400 mb-1.5 uppercase tracking-wide">Email</label>
-              <input
+              <LuxuryInput
+                label="Email"
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="w-full bg-[#0a0a0a] border border-[#333] rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:border-[#722F37] focus:ring-1 focus:ring-[#722F37] outline-none transition"
                 placeholder="email@exemplu.ro"
+                required
               />
-            </div>
-            {error && <p className="text-red-400 text-sm">{error}</p>}
-            <button
-              type="submit"
-              className="w-full bg-gradient-to-r from-[#722F37] to-[#8B3A42] text-white py-3 rounded-lg font-semibold hover:from-[#8B3A42] hover:to-[#722F37] transition-all shadow-lg shadow-[#722F37]/20"
-            >
-              Creează cont client
-            </button>
-          </form>
-        )}
+              {error && (
+                <p className="text-red-400/80 text-xs text-center animate-fade-in">{error}</p>
+              )}
+              <LuxuryButton type="submit" variant="wine" className="w-full" disabled={isLoading}>
+                {isLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Se creează contul...
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    Creează Cont VIP <Sparkles className="w-4 h-4" />
+                  </span>
+                )}
+              </LuxuryButton>
+            </form>
+          )}
 
-        {/* Quick Login */}
-        <div className="mt-6 pt-6 border-t border-[#333]">
-          <p className="text-xs text-gray-500 mb-3 text-center uppercase tracking-wide">Demo — Autentificare rapidă:</p>
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              onClick={() => quickLogin('manager@merlot.ro', 'manager123')}
-              className="flex flex-col items-center gap-1.5 p-3 bg-[#222] rounded-lg hover:bg-[#2a2a2a] transition group"
-            >
-              <Shield className="w-5 h-5 text-[#C4A35A]" />
-              <span className="text-[10px] text-gray-400 group-hover:text-white">Manager</span>
-            </button>
-            <button
-              onClick={() => quickLogin('barman@merlot.ro', 'barman123')}
-              className="flex flex-col items-center gap-1.5 p-3 bg-[#222] rounded-lg hover:bg-[#2a2a2a] transition group"
-            >
-              <Smartphone className="w-5 h-5 text-[#C4A35A]" />
-              <span className="text-[10px] text-gray-400 group-hover:text-white">Barman</span>
-            </button>
-            <button
-              onClick={() => quickLogin('ion.popescu@email.com', 'client123')}
-              className="flex flex-col items-center gap-1.5 p-3 bg-[#222] rounded-lg hover:bg-[#2a2a2a] transition group"
-            >
-              <CreditCard className="w-5 h-5 text-[#C4A35A]" />
-              <span className="text-[10px] text-gray-400 group-hover:text-white">Client</span>
-            </button>
+          {/* Ornament */}
+          <OrnamentDivider className="mt-8 mb-6" />
+
+          {/* Quick Access */}
+          <div className="text-center">
+            <p className="text-[10px] text-white/30 tracking-[0.3em] uppercase mb-4">
+              Acces Demo Rapid
+            </p>
+            <div className="grid grid-cols-3 gap-3">
+              <button
+                onClick={() => quickLogin('manager@merlot.ro', 'manager123')}
+                disabled={isLoading}
+                className="group flex flex-col items-center gap-2 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/5 transition-all duration-500 disabled:opacity-50"
+              >
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
+                  <Shield className="w-4 h-4 text-[#D4AF37]" />
+                </div>
+                <span className="text-[10px] text-white/40 group-hover:text-[#D4AF37] tracking-wider uppercase transition-colors">Manager</span>
+              </button>
+              <button
+                onClick={() => quickLogin('barman@merlot.ro', 'barman123')}
+                disabled={isLoading}
+                className="group flex flex-col items-center gap-2 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/5 transition-all duration-500 disabled:opacity-50"
+              >
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
+                  <Smartphone className="w-4 h-4 text-[#D4AF37]" />
+                </div>
+                <span className="text-[10px] text-white/40 group-hover:text-[#D4AF37] tracking-wider uppercase transition-colors">Barman</span>
+              </button>
+              <button
+                onClick={() => quickLogin('ion.popescu@email.com', 'client123')}
+                disabled={isLoading}
+                className="group flex flex-col items-center gap-2 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/5 transition-all duration-500 disabled:opacity-50"
+              >
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
+                  <CreditCard className="w-4 h-4 text-[#D4AF37]" />
+                </div>
+                <span className="text-[10px] text-white/40 group-hover:text-[#D4AF37] tracking-wider uppercase transition-colors">Client</span>
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-      <p className="mt-6 text-xs text-gray-600 text-center">
-        © 2024 Merlot Nightclub — Sistem VIP NFC v1.0
-      </p>
+        {/* Footer */}
+        <div className="text-center mt-8">
+          <p className="text-[10px] text-white/20 tracking-[0.2em] uppercase">
+            © 2024 Merlot Nightclub — Powered by NFC
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
