@@ -176,14 +176,44 @@ CREATE POLICY "Managers can manage announcements"
 -- ============================================
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
+DECLARE
+  v_name TEXT;
+  v_role TEXT;
+  v_phone TEXT;
+  v_avatar TEXT;
 BEGIN
-  INSERT INTO public.users (id, email, name, role)
+  -- Extrage datele din metadata
+  v_name := NEW.raw_user_meta_data->>'name';
+  v_role := NEW.raw_user_meta_data->>'role';
+  v_phone := NEW.raw_user_meta_data->>'phone';
+  v_avatar := NEW.raw_user_meta_data->>'avatar';
+  
+  -- Dacă nu există name în metadata, folosește email-ul temporar
+  -- (dar aplicația va face UPDATE imediat după signup)
+  IF v_name IS NULL OR v_name = '' THEN
+    v_name := 'Utilizator Nou';
+  END IF;
+  
+  -- Role default
+  IF v_role IS NULL OR v_role = '' THEN
+    v_role := 'client';
+  END IF;
+  
+  -- Avatar default
+  IF v_avatar IS NULL OR v_avatar = '' THEN
+    v_avatar := '🎫';
+  END IF;
+  
+  INSERT INTO public.users (id, email, name, role, phone, avatar)
   VALUES (
     NEW.id,
     NEW.email,
-    COALESCE(NEW.raw_user_meta_data->>'name', 'Utilizator Nou'),
-    COALESCE(NEW.raw_user_meta_data->>'role', 'client')
+    v_name,
+    v_role,
+    v_phone,
+    v_avatar
   );
+  
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
