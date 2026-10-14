@@ -3,12 +3,6 @@ import { createClient } from '@supabase/supabase-js';
 // ============================================
 // CONFIGURARE SUPABASE
 // ============================================
-// 1. Creează un proiect nou la https://supabase.com
-// 2. Copiază Project URL și anon/public key
-// 3. Înlocuiește valorile de mai jos
-// 4. Rulează schema SQL din /database/schema.sql
-// ============================================
-
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'YOUR_SUPABASE_URL';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY';
 
@@ -19,7 +13,7 @@ if (supabaseUrl === 'YOUR_SUPABASE_URL' || supabaseAnonKey === 'YOUR_SUPABASE_AN
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // ============================================
-// TIPURI TYPESCRIPT (generate din schema SQL)
+// TIPURI TYPESCRIPT
 // ============================================
 
 export type UserRole = 'client' | 'barman' | 'manager';
@@ -121,31 +115,29 @@ export const db = {
       return data as User[];
     },
 
-    async create(user: Omit<User, 'id' | 'created_at'> & { password: string }) {
-      // Creează auth user cu metadata (pentru trigger)
+    async create(userData: Omit<User, 'id' | 'created_at'> & { password: string }) {
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: user.email,
-        password: user.password,
+        email: userData.email,
+        password: userData.password,
         options: {
           data: {
-            name: user.name,
-            role: user.role,
-            phone: user.phone,
-            avatar: user.avatar,
+            name: userData.name,
+            role: userData.role,
+            phone: userData.phone,
+            avatar: userData.avatar,
           }
         }
       });
       if (authError) throw authError;
 
-      // Actualizează profilul cu datele corecte (trigger-ul ar fi putut folosi defaults)
       const { data, error } = await supabase
         .from('users')
         .update({
-          name: user.name,
-          phone: user.phone,
-          email: user.email,
-          role: user.role,
-          avatar: user.avatar,
+          name: userData.name,
+          phone: userData.phone,
+          email: userData.email,
+          role: userData.role,
+          avatar: userData.avatar,
         })
         .eq('id', authData.user!.id)
         .select()
@@ -390,7 +382,6 @@ export const auth = {
     });
     if (error) throw error;
     
-    // Get user profile
     const { data: profile, error: profileError } = await supabase
       .from('users')
       .select('*')
@@ -459,10 +450,8 @@ export function calculateActiveDiscount(rules: DiscountRule[]): { rule: Discount
     if (!rule.is_active) return false;
     if (!rule.valid_days.includes(dayOfWeek)) return false;
     
-    // Handle normal time range
     if (currentTime >= rule.start_time && currentTime <= rule.end_time) return true;
     
-    // Handle overnight rules (e.g., 22:00 - 04:00)
     if (rule.end_time < rule.start_time) {
       if (currentTime >= rule.start_time || currentTime <= rule.end_time) return true;
     }
