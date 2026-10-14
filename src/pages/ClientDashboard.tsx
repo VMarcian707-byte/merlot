@@ -273,24 +273,26 @@ export default function ClientDashboard() {
                     <GoldBadge>{ann.target === 'vip' ? 'VIP' : 'Toți'}</GoldBadge>
                   </div>
                   <p className="text-sm text-white/50 leading-relaxed mb-4">{ann.message}</p>
-                  <div className="flex items-center gap-4 pt-4 border-t border-white/5">
-                    <div className="flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-[#D4AF37]/60" />
-                      <span className="text-xs text-white/40">
-                        {new Date(ann.event_date).toLocaleDateString('ro-RO', { 
-                          weekday: 'short', day: 'numeric', month: 'short' 
-                        })}
-                      </span>
+                  {ann.event_date && (
+                    <div className="flex items-center gap-4 pt-4 border-t border-white/5">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-[#D4AF37]/60" />
+                        <span className="text-xs text-white/40">
+                          {new Date(ann.event_date).toLocaleDateString('ro-RO', { 
+                            weekday: 'short', day: 'numeric', month: 'short' 
+                          })}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-[#D4AF37]/60" />
+                        <span className="text-xs text-white/40">
+                          {new Date(ann.event_date).toLocaleTimeString('ro-RO', { 
+                            hour: '2-digit', minute: '2-digit' 
+                          })}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-[#D4AF37]/60" />
-                      <span className="text-xs text-white/40">
-                        {new Date(ann.event_date).toLocaleTimeString('ro-RO', { 
-                          hour: '2-digit', minute: '2-digit' 
-                        })}
-                      </span>
-                    </div>
-                  </div>
+                  )}
                 </div>
               ))
             )}

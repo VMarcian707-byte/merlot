@@ -20,11 +20,11 @@ export default function BarmanScanner() {
 
   if (!currentUser) return null;
 
-  const handleNFCSimulate = (cardUuid: string) => {
+  const handleNFCSimulate = async (cardUuid: string) => {
     setScanning(true);
     setResult(null);
-    setTimeout(() => {
-      const scanResult = scanCard(cardUuid, currentUser.id);
+    setTimeout(async () => {
+      const scanResult = await scanCard(cardUuid, currentUser.id);
       setResult(scanResult);
       setScanning(false);
     }, 1500);
@@ -48,13 +48,13 @@ export default function BarmanScanner() {
       setScanning(true);
       setResult(null);
       await ndef.scan();
-      ndef.onreading = (event: any) => {
+      ndef.onreading = async (event: any) => {
         const record = event.message.records[0];
         if (record) {
           const decoder = new TextDecoder();
           const url = decoder.decode(record.data);
           const uuid = url.split('/c/')[1] || url;
-          const scanResult = scanCard(uuid, currentUser.id);
+          const scanResult = await scanCard(uuid, currentUser.id);
           setResult(scanResult);
           setScanning(false);
         }

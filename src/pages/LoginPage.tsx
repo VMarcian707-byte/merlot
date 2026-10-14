@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '../store';
 import { LuxuryBackground, OrnamentDivider, LuxuryButton, LuxuryInput } from '../components/LuxuryUI';
-import { Wine, Shield, Smartphone, CreditCard, Sparkles, ArrowRight } from 'lucide-react';
+import { Wine, Sparkles, ArrowRight } from 'lucide-react';
 
 export default function LoginPage() {
   const { login, registerClient } = useStore();
@@ -28,22 +28,17 @@ export default function LoginPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!name || !phone || !email) {
+    if (!name || !phone || !email || !password) {
       setError('Completați toate câmpurile obligatorii');
       return;
     }
     setIsLoading(true);
-    await new Promise(r => setTimeout(r, 800));
-    registerClient(name, phone, email);
+    try {
+      await registerClient(name, phone, email, password);
+    } catch (err: any) {
+      setError(err?.message || 'Eroare la creare cont');
+    }
     setIsLoading(false);
-  };
-
-  const quickLogin = (em: string, pass: string) => {
-    setIsLoading(true);
-    setTimeout(() => {
-      login(em, pass);
-      setIsLoading(false);
-    }, 500);
   };
 
   return (
@@ -165,6 +160,14 @@ export default function LoginPage() {
                 placeholder="email@exemplu.ro"
                 required
               />
+              <LuxuryInput
+                label="Parolă"
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="Minim 6 caractere"
+                required
+              />
               {error && (
                 <p className="text-red-400/80 text-xs text-center animate-fade-in">{error}</p>
               )}
@@ -183,46 +186,14 @@ export default function LoginPage() {
             </form>
           )}
 
-          {/* Ornament */}
-          <OrnamentDivider className="mt-8 mb-6" />
-
-          {/* Quick Access */}
-          <div className="text-center">
-            <p className="text-[10px] text-white/30 tracking-[0.3em] uppercase mb-4">
-              Acces Demo Rapid
+          {/* Info */}
+          <div className="mt-8 text-center">
+            <p className="text-[10px] text-white/30 tracking-[0.2em] uppercase mb-2">
+              Sistem VIP Fidelitate NFC
             </p>
-            <div className="grid grid-cols-3 gap-3">
-              <button
-                onClick={() => quickLogin('manager@merlot.ro', 'manager123')}
-                disabled={isLoading}
-                className="group flex flex-col items-center gap-2 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/5 transition-all duration-500 disabled:opacity-50"
-              >
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
-                  <Shield className="w-4 h-4 text-[#D4AF37]" />
-                </div>
-                <span className="text-[10px] text-white/40 group-hover:text-[#D4AF37] tracking-wider uppercase transition-colors">Manager</span>
-              </button>
-              <button
-                onClick={() => quickLogin('barman@merlot.ro', 'barman123')}
-                disabled={isLoading}
-                className="group flex flex-col items-center gap-2 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/5 transition-all duration-500 disabled:opacity-50"
-              >
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
-                  <Smartphone className="w-4 h-4 text-[#D4AF37]" />
-                </div>
-                <span className="text-[10px] text-white/40 group-hover:text-[#D4AF37] tracking-wider uppercase transition-colors">Barman</span>
-              </button>
-              <button
-                onClick={() => quickLogin('ion.popescu@email.com', 'client123')}
-                disabled={isLoading}
-                className="group flex flex-col items-center gap-2 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/5 transition-all duration-500 disabled:opacity-50"
-              >
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
-                  <CreditCard className="w-4 h-4 text-[#D4AF37]" />
-                </div>
-                <span className="text-[10px] text-white/40 group-hover:text-[#D4AF37] tracking-wider uppercase transition-colors">Client</span>
-              </button>
-            </div>
+            <p className="text-[10px] text-white/20">
+              Conectat la baza de date Supabase
+            </p>
           </div>
         </div>
 
