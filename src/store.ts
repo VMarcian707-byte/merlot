@@ -61,6 +61,9 @@ interface AppState {
 
   // Rule Actions
   toggleDiscountRule: (id: string) => Promise<void>;
+  addDiscountRule: (rule: Omit<DiscountRule, 'id' | 'created_at'>) => Promise<void>;
+  updateDiscountRule: (id: string, updates: Partial<DiscountRule>) => Promise<void>;
+  deleteDiscountRule: (id: string) => Promise<void>;
 
   // Announcement Actions
   addAnnouncement: (title: string, message: string, eventDate: string, target: 'all' | 'vip' | 'regular') => Promise<void>;
@@ -303,6 +306,36 @@ export const useStore = create<AppState>((set, get) => ({
       await get().refreshRules();
     } catch (error) {
       console.error('Error toggling rule:', error);
+      throw error;
+    }
+  },
+
+  addDiscountRule: async (rule: Omit<DiscountRule, 'id' | 'created_at'>) => {
+    try {
+      await db.discountRules.create(rule);
+      await get().refreshRules();
+    } catch (error) {
+      console.error('Error creating rule:', error);
+      throw error;
+    }
+  },
+
+  updateDiscountRule: async (id: string, updates: Partial<DiscountRule>) => {
+    try {
+      await db.discountRules.update(id, updates);
+      await get().refreshRules();
+    } catch (error) {
+      console.error('Error updating rule:', error);
+      throw error;
+    }
+  },
+
+  deleteDiscountRule: async (id: string) => {
+    try {
+      await db.discountRules.delete(id);
+      await get().refreshRules();
+    } catch (error) {
+      console.error('Error deleting rule:', error);
       throw error;
     }
   },

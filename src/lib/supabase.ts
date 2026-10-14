@@ -271,6 +271,25 @@ export const db = {
       if (error) throw error;
       return data as DiscountRule;
     },
+
+    async update(id: string, updates: Partial<DiscountRule>) {
+      const { data, error } = await supabase
+        .from('discount_rules')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as DiscountRule;
+    },
+
+    async delete(id: string) {
+      const { error } = await supabase
+        .from('discount_rules')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
   },
 
   // ---------- VISITS LOG ----------

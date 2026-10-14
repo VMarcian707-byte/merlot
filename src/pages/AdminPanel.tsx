@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useStore } from '../store';
 import { LuxuryBackground, OrnamentDivider, GoldBadge, LuxuryCard, NoiseOverlay, StatCard, LuxuryButton } from '../components/LuxuryUI';
+import RuleModal from '../components/RuleModal';
 import {
   LogOut, Users, CreditCard, Bell, BarChart3, Settings, Plus,
   Ban, CheckCircle, XCircle, Send, Calendar, Clock, Percent,
   TrendingUp, UserCheck, ScanLine, Shield, BookOpen, Sparkles,
-  Crown, Gem, Wine, ChevronRight, Zap, Wifi
+  Crown, Gem, Wine, ChevronRight, Zap, Wifi, Edit, Trash2
 } from 'lucide-react';
+import { DiscountRule } from '../lib/supabase';
 
 type AdminTab = 'dashboard' | 'cards' | 'rules' | 'notifications' | 'docs';
 
@@ -22,6 +24,10 @@ export default function AdminPanel() {
   const [annDate, setAnnDate] = useState('');
   const [annTarget, setAnnTarget] = useState<'all' | 'vip' | 'regular'>('all');
   const [annSent, setAnnSent] = useState(false);
+
+  // Rule modal state
+  const [showRuleModal, setShowRuleModal] = useState(false);
+  const [editingRule, setEditingRule] = useState<DiscountRule | null>(null);
 
   if (!currentUser) return null;
 
@@ -41,6 +47,40 @@ export default function AdminPanel() {
       setAnnDate('');
       setAnnSent(true);
       setTimeout(() => setAnnSent(false), 3000);
+    }
+  };
+
+  const handleEditRule = (rule: DiscountRule) => {
+    setEditingRule(rule);
+    setShowRuleModal(true);
+  };
+
+  const handleDeleteRule = async (id: string) => {
+    if (confirm('Ești sigur că vrei să ștergi această regulă de discount?')) {
+      try {
+        await useStore.getState().deleteDiscountRule(id);
+      } catch (error) {
+        console.error('Error deleting rule:', error);
+        alert('Eroare la ștergerea regulii');
+      }
+    }
+  };
+
+  const handleSaveRule = async (rule: Omit<DiscountRule, 'id' | 'created_at'> & { id?: string }) => {
+    try {
+      if (rule.id) {
+        // Update existing rule
+        const { id, ...updates } = rule;
+        await useStore.getState().updateDiscountRule(id, updates);
+      } else {
+        // Create new rule
+        await useStore.getState().addDiscountRule(rule as Omit<DiscountRule, 'id' | 'created_at'>);
+      }
+      setShowRuleModal(false);
+      setEditingRule(null);
+    } catch (error) {
+      console.error('Error saving rule:', error);
+      alert('Eroare la salvarea regulii');
     }
   };
 
@@ -268,11 +308,19 @@ export default function AdminPanel() {
         {/* Discount Rules */}
         {activeTab === 'rules' && (
           <div className="space-y-5 animate-fade-in">
-            <div className="text-center mb-6 animate-slide-up">
-              <p className="font-accent text-[#D4AF37]/60 text-xs tracking-[0.3em] uppercase italic mb-2">
-                Configurare
-              </p>
-              <h2 className="font-display text-2xl text-white">Reguli de Discount</h2>
+            <div className="flex justify-between items-center mb-6 animate-slide-up">
+              <div>
+                <p className="font-accent text-[#D4AF37]/60 text-xs tracking-[0.3em] uppercase italic mb-2">
+                  Configurare
+                </p>
+                <h2 className="font-display text-2xl text-white">Reguli de Discount</h2>
+              </div>
+              <button
+                onClick={() => setShowRuleModal(true)}
+                className="btn-luxury flex items-center gap-2 text-xs"
+              >
+                <Plus className="w-4 h-4" /> Adaugă Regulă
+              </button>
             </div>
 
             <div className="space-y-3">
@@ -309,21 +357,50 @@ export default function AdminPanel() {
                       <span className={`text-3xl font-display font-bold ${rule.is_active ? 'text-gradient-gold' : 'text-white/20'}`}>
                         -{rule.discount_percentage}%
                       </span>
-                      <button
-                        onClick={() => toggleDiscountRule(rule.id)}
-                        className={`p-2 rounded-lg transition-all duration-300 ${
-                          rule.is_active 
-                            ? 'bg-red-500/10 hover:bg-red-500/20' 
-                            : 'bg-emerald-500/10 hover:bg-emerald-500/20'
-                        }`}
-                      >
-                        {rule.is_active ? <XCircle className="w-4 h-4 text-red-400" /> : <CheckCircle className="w-4 h-4 text-emerald-400" />}
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleEditRule(rule)}
+                          className="p-2 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 transition-all duration-300"
+                          title="Editează"
+                        >
+                          <Edit className="w-4 h-4 text-sky-400" />
+                        </button>
+                        <button
+                          onClick={() => toggleDiscountRule(rule.id)}
+                          className={`p-2 rounded-lg transition-all duration-300 ${
+                            rule.is_active 
+                              ? 'bg-red-500/10 hover:bg-red-500/20' 
+                              : 'bg-emerald-500/10 hover:bg-emerald-500/20'
+                          }`}
+                          title={rule.is_active ? 'Dezactivează' : 'Activează'}
+                        >
+                          {rule.is_active ? <XCircle className="w-4 h-4 text-red-400" /> : <CheckCircle className="w-4 h-4 text-emerald-400" />}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteRule(rule.id)}
+                          className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 transition-all duration-300"
+                          title="Șterge"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-400" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
+
+            {/* Rule Modal */}
+            {showRuleModal && (
+              <RuleModal
+                rule={editingRule}
+                onClose={() => {
+                  setShowRuleModal(false);
+                  setEditingRule(null);
+                }}
+                onSave={handleSaveRule}
+              />
+            )}
           </div>
         )}
 
