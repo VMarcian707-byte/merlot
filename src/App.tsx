@@ -4,6 +4,7 @@ import LoginPage from './pages/LoginPage';
 import ClientDashboard from './pages/ClientDashboard';
 import BarmanScanner from './pages/BarmanScanner';
 import AdminPanel from './pages/AdminPanel';
+import DatabaseTest from './pages/DatabaseTest';
 
 export default function App() {
   const { currentUser, isLoading, initialize } = useStore();
@@ -11,6 +12,11 @@ export default function App() {
   useEffect(() => {
     initialize();
   }, []);
+
+  // Verifică dacă suntem pe ruta de test
+  if (window.location.pathname === '/test-db') {
+    return <DatabaseTest />;
+  }
 
   if (isLoading) {
     return (

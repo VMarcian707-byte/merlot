@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '../store';
 import { LuxuryBackground, OrnamentDivider, LuxuryButton, LuxuryInput } from '../components/LuxuryUI';
-import { Wine, Sparkles, ArrowRight } from 'lucide-react';
+import { Wine, Sparkles, ArrowRight, Database } from 'lucide-react';
 
 export default function LoginPage() {
   const { login, registerClient } = useStore();
@@ -198,10 +198,17 @@ export default function LoginPage() {
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-8">
+        <div className="text-center mt-8 space-y-3">
           <p className="text-[10px] text-white/20 tracking-[0.2em] uppercase">
             © 2024 Merlot Nightclub — Powered by NFC
           </p>
+          <a
+            href="/test-db"
+            className="inline-flex items-center gap-1 text-[10px] text-white/30 hover:text-[#D4AF37] transition-colors"
+          >
+            <Database className="w-3 h-3" />
+            Test Conexiune DB
+          </a>
         </div>
       </div>
     </div>
