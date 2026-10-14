@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#722F37"/>
+      <stop offset="100%" style="stop-color:#3d1a1f"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#C4A35A"/>
+      <stop offset="100%" style="stop-color:#8B7335"/>
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="40" fill="url(#bg)"/>
+  <circle cx="96" cy="96" r="70" fill="none" stroke="url(#gold)" stroke-width="3"/>
+  <!-- Wine glass -->
+  <path d="M 76 60 Q 76 90 96 100 Q 116 90 116 60 Z" fill="none" stroke="#C4A35A" stroke-width="2.5"/>
+  <path d="M 76 60 L 116 60" fill="none" stroke="#C4A35A" stroke-width="2"/>
+  <path d="M 80 70 Q 80 85 96 92 Q 112 85 112 70 Z" fill="#722F37" opacity="0.8"/>
+  <line x1="96" y1="100" x2="96" y2="130" stroke="#C4A35A" stroke-width="2.5"/>
+  <line x1="82" y1="130" x2="110" y2="130" stroke="#C4A35A" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- NFC waves -->
+  <path d="M 130 70 Q 140 80 130 90" fill="none" stroke="#C4A35A" stroke-width="1.5" opacity="0.6"/>
+  <path d="M 136 64 Q 150 80 136 96" fill="none" stroke="#C4A35A" stroke-width="1.5" opacity="0.4"/>
+  <path d="M 142 58 Q 160 80 142 102" fill="none" stroke="#C4A35A" stroke-width="1.5" opacity="0.2"/>
+  <!-- VIP text -->
+  <text x="96" y="155" text-anchor="middle" fill="#C4A35A" font-family="Arial, sans-serif" font-size="14" font-weight="bold" letter-spacing="4">VIP</text>
+</svg>
