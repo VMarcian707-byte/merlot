@@ -1,17 +1,18 @@
 import { useState } from 'react';
 import { useStore } from '../store';
 import { LuxuryBackground, OrnamentDivider, LuxuryButton, LuxuryInput } from '../components/LuxuryUI';
-import { Wine, Sparkles, ArrowRight, Database } from 'lucide-react';
+import { Wine, Sparkles, ArrowRight, Database, Mail, CheckCircle } from 'lucide-react';
 
 export default function LoginPage() {
   const { login, registerClient } = useStore();
-  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [mode, setMode] = useState<'login' | 'register' | 'forgot'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +38,27 @@ export default function LoginPage() {
       await registerClient(name, phone, email, password);
     } catch (err: any) {
       setError(err?.message || 'Eroare la creare cont');
+    }
+    setIsLoading(false);
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    if (!email) {
+      setError('Introduceți email-ul');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const { supabase } = await import('../lib/supabase');
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/reset-password'
+      });
+      if (error) throw error;
+      setResetSent(true);
+    } catch (err: any) {
+      setError(err?.message || 'Eroare la trimitere email');
     }
     setIsLoading(false);
   };
@@ -100,7 +122,7 @@ export default function LoginPage() {
             </button>
           </div>
 
-          {mode === 'login' ? (
+          {mode === 'login' && (
             <form onSubmit={handleLogin} className="space-y-5">
               <LuxuryInput
                 label="Email"
@@ -133,8 +155,87 @@ export default function LoginPage() {
                   </span>
                 )}
               </LuxuryButton>
+              
+              <div className="text-center pt-2">
+                <button
+                  type="button"
+                  onClick={() => { setMode('forgot'); setError(''); }}
+                  className="text-xs text-[#D4AF37]/60 hover:text-[#D4AF37] transition-colors"
+                >
+                  Am uitat parola
+                </button>
+              </div>
             </form>
-          ) : (
+          )}
+
+          {mode === 'forgot' && (
+            <div className="space-y-5">
+              {!resetSent ? (
+                <form onSubmit={handleForgotPassword} className="space-y-5">
+                  <div className="text-center mb-4">
+                    <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-[#D4AF37]/20 to-[#722F37]/20 flex items-center justify-center">
+                      <Mail className="w-8 h-8 text-[#D4AF37]" />
+                    </div>
+                    <h3 className="font-display text-lg text-white mb-1">Resetare Parolă</h3>
+                    <p className="text-xs text-white/40">Introduceți email-ul și vă vom trimite un link de resetare</p>
+                  </div>
+                  <LuxuryInput
+                    label="Email"
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="email@merlot.ro"
+                    required
+                  />
+                  {error && (
+                    <p className="text-red-400/80 text-xs text-center animate-fade-in">{error}</p>
+                  )}
+                  <LuxuryButton type="submit" variant="wine" className="w-full" disabled={isLoading}>
+                    {isLoading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Se trimite...
+                      </span>
+                    ) : (
+                      <span className="flex items-center justify-center gap-2">
+                        Trimite Link Resetare <Mail className="w-4 h-4" />
+                      </span>
+                    )}
+                  </LuxuryButton>
+                  <div className="text-center">
+                    <button
+                      type="button"
+                      onClick={() => { setMode('login'); setError(''); }}
+                      className="text-xs text-white/40 hover:text-white/60 transition-colors"
+                    >
+                      ← Înapoi la autentificare
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="text-center py-6">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 flex items-center justify-center">
+                    <CheckCircle className="w-8 h-8 text-emerald-400" />
+                  </div>
+                  <h3 className="font-display text-lg text-white mb-2">Email Trimis!</h3>
+                  <p className="text-sm text-white/60 mb-4">
+                    Verificați inbox-ul pentru <span className="text-[#D4AF37]">{email}</span>
+                  </p>
+                  <p className="text-xs text-white/40 mb-6">
+                    Click pe link-ul din email pentru a reseta parola
+                  </p>
+                  <button
+                    onClick={() => { setMode('login'); setResetSent(false); setEmail(''); }}
+                    className="btn-luxury w-full"
+                  >
+                    Înapoi la Autentificare
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {mode === 'register' && (
             <form onSubmit={handleRegister} className="space-y-5">
               <LuxuryInput
                 label="Nume complet"

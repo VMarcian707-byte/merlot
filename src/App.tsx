@@ -5,6 +5,7 @@ import ClientDashboard from './pages/ClientDashboard';
 import BarmanScanner from './pages/BarmanScanner';
 import AdminPanel from './pages/AdminPanel';
 import DatabaseTest from './pages/DatabaseTest';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 export default function App() {
   const { currentUser, isLoading, initialize } = useStore();
@@ -16,6 +17,11 @@ export default function App() {
   // Verifică dacă suntem pe ruta de test
   if (window.location.pathname === '/test-db') {
     return <DatabaseTest />;
+  }
+
+  // Verifică dacă suntem pe ruta de resetare parolă
+  if (window.location.pathname === '/reset-password' || window.location.hash.includes('access_token')) {
+    return <ResetPasswordPage />;
   }
 
   if (isLoading) {
