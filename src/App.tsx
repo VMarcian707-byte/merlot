@@ -6,6 +6,7 @@ import BarmanScanner from './pages/BarmanScanner';
 import AdminPanel from './pages/AdminPanel';
 import DatabaseTest from './pages/DatabaseTest';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import InstallPromptBanner from './components/InstallPromptBanner';
 
 export default function App() {
   const { currentUser, isLoading, initialize } = useStore();
@@ -45,17 +46,31 @@ export default function App() {
   }
 
   if (!currentUser) {
-    return <LoginPage />;
+    return (
+      <>
+        <LoginPage />
+        <InstallPromptBanner />
+      </>
+    );
   }
 
-  switch (currentUser.role) {
-    case 'client':
-      return <ClientDashboard />;
-    case 'barman':
-      return <BarmanScanner />;
-    case 'manager':
-      return <AdminPanel />;
-    default:
-      return <LoginPage />;
-  }
+  const rolePage = (() => {
+    switch (currentUser.role) {
+      case 'client':
+        return <ClientDashboard />;
+      case 'barman':
+        return <BarmanScanner />;
+      case 'manager':
+        return <AdminPanel />;
+      default:
+        return <LoginPage />;
+    }
+  })();
+
+  return (
+    <>
+      {rolePage}
+      <InstallPromptBanner />
+    </>
+  );
 }

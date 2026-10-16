@@ -29,6 +29,39 @@ export interface User {
   role: UserRole;
   avatar: string | null;
   created_at: string;
+  // GDPR (conform database/gdpr.sql)
+  gdpr_consent_accepted?: boolean | null;
+  gdpr_consent_at?: string | null;
+}
+
+// ============================================
+// GDPR CONSTANTS & HELPERS
+// ============================================
+export const GDPR_VERSION = '1.0';
+export const DATA_RETENTION_DAYS = 730; // 2 ani de la ultima vizită (RGD Art. 5(1)(e))
+
+export function isGdprConsentValid(user: Pick<User, 'gdpr_consent_accepted' | 'gdpr_consent_at'> | null | undefined): boolean {
+  if (!user) return false;
+  return user.gdpr_consent_accepted === true && !!user.gdpr_consent_at;
+}
+
+export function buildDataExport(users: User[], cards: NFCCard[], visits: VisitLog[], userBadges: UserBadge[]) {
+  return {
+    export_date: new Date().toISOString(),
+    owner: users.find(u => u.id === userBadges[0]?.user_id || '') ?? null,
+    profile: users.map(u => ({
+      id: u.id, name: u.name, email: u.email, phone: u.phone, role: u.role,
+      created_at: u.created_at,
+      gdpr_consent_accepted: u.gdpr_consent_accepted ?? false,
+      gdpr_consent_at: u.gdpr_consent_at ?? null,
+    })),
+    nfc_cards: cards.map(c => ({ card_uuid: c.card_uuid, status: c.status, issued_at: c.issued_at })),
+    visits: visits.map(v => ({
+      scanned_at: v.scanned_at, discount_applied: v.discount_applied,
+      bill_amount: v.bill_amount ?? null, discount_amount: v.discount_amount ?? null, final_amount: v.final_amount ?? null,
+    })),
+    badges: userBadges.map(b => ({ name: b.name, earned_at: b.earned_at })),
+  };
 }
 
 export interface NFCCard {
@@ -329,6 +362,8 @@ class MockStore {
       avatar: userData.avatar || '🎫',
       password: userData.password,
       created_at: new Date().toISOString(),
+      gdpr_consent_accepted: userData.gdpr_consent_accepted ?? false,
+      gdpr_consent_at: userData.gdpr_consent_accepted ? new Date().toISOString() : null,
     };
     this.users.unshift(newUser);
     this.save('merlot_users', this.users);
@@ -586,9 +621,18 @@ class MockStore {
     };
   }
 
+  // Unblock card (manager action — starea block/active e verificată la fiecare scanare)
+  unblockCard(cardId: string) {
+    const card = this.nfcCards.find(c => c.id === cardId);
+    if (!card) throw new Error('Card not found');
+    card.status = card.assigned_user_id ? 'active' : 'unassigned';
+    this.save('merlot_cards', this.nfcCards);
+    return card;
+  }
+
   // Scan atomic with optional bill amount calculation + anti-fraud protection
   scanCard(cardUuid: string, barmanId: string, billAmount?: number) {
-    const invalidResult = (message: string) => ({
+    const invalidResult = (message: string, reason?: string) => ({
       valid: false,
       discount: '0%',
       discount_percentage: 0,
@@ -599,17 +643,21 @@ class MockStore {
       total_visits: 0,
       rule_name: '',
       message,
+      reason,
     });
 
     const card = this.getCardByUUID(cardUuid);
-    if (!card) return invalidResult('Card NFC necunoscut');
+    if (!card) return invalidResult('Card NFC necunoscut', 'unknown_card');
 
-    if (card.status === 'blocked') return invalidResult('Card BLOCAT! Contactați managerul.');
+    // ===== VERIFICARE STATUS CARD LA SCANARE (anti-fraud + GDPR Art. 17) =====
+    if (card.status === 'blocked') return invalidResult('Card BLOCAT de manager! Acces refuzat.', 'card_blocked');
+    if (card.status === 'unassigned') return invalidResult('Card neasociat unui client. Solicită asocierea la bar.', 'card_unassigned');
+    if (card.status !== 'active') return invalidResult(`Card inactiv (status: ${card.status}). Acces refuzat.`, 'card_inactive');
 
-    if (!card.assigned_user_id) return invalidResult('Card neasociat unui client.');
+    if (!card.assigned_user_id) return invalidResult('Card neasociat unui client.', 'card_unassigned');
 
     const client = this.getUserById(card.assigned_user_id);
-    if (!client) return invalidResult('Clientul asociat nu a fost găsit.');
+    if (!client) return invalidResult('Clientul asociat nu a fost găsit (cont șters GDPR).', 'client_missing');
 
     // ===== PROTECȚIE ANTI-FRAUDĂ (sincronizată cu funcția SQL scan_nfc_card) =====
     const now = Date.now();
@@ -621,7 +669,7 @@ class MockStore {
     // 1. Cooldown per card: o singură scanare validă la 2 minute
     if (lastScan && now - lastScan < SCAN_COOLDOWN_MS) {
       const waitSec = Math.ceil((SCAN_COOLDOWN_MS - (now - lastScan)) / 1000);
-      return invalidResult(`⛔ Card scanat recent! Așteptați ${waitSec}s între scanări (anti-fraud).`);
+      return invalidResult(`⛔ Card scanat recent! Așteptați ${waitSec}s între scanări (anti-fraud).`, 'cooldown');
     }
 
     // 2. Rate limiting per barman: max 10 scanări valide / oră
@@ -630,7 +678,7 @@ class MockStore {
       v => v.barman_id === barmanId && new Date(v.scanned_at).getTime() > hourAgo
     ).length;
     if (barmanScansLastHour >= BARMAN_MAX_SCANS_PER_HOUR) {
-      return invalidResult(`⛔ Limită atinsă: maxim ${BARMAN_MAX_SCANS_PER_HOUR} scanări/oră pentru acest barman.`);
+      return invalidResult(`⛔ Limită atinsă: maxim ${BARMAN_MAX_SCANS_PER_HOUR} scanări/oră pentru acest barman.`, 'barman_rate_limit');
     }
 
     const { rule } = calculateActiveDiscount(this.discountRules);
@@ -699,6 +747,68 @@ class MockStore {
       today_revenue: Math.round(todayRevenue * 100) / 100,
       total_savings_given: Math.round(totalSavingsGiven * 100) / 100,
     };
+  }
+
+  // ============================================
+  // GDPR — CONSIMȚĂMÂNT, EXPORT DATE (Art. 20), DREPTUL LA UITARE (Art. 17)
+  // ============================================
+  acceptGdprConsent(userId: string) {
+    const idx = this.users.findIndex(u => u.id === userId);
+    if (idx === -1) throw new Error('User not found');
+    this.users[idx] = { ...this.users[idx], gdpr_consent_accepted: true, gdpr_consent_at: new Date().toISOString() };
+    this.save('merlot_users', this.users);
+    if (this.currentUser?.id === userId) {
+      this.currentUser = { ...this.currentUser, gdpr_consent_accepted: true, gdpr_consent_at: this.users[idx].gdpr_consent_at };
+      this.save('merlot_current_user', this.currentUser);
+    }
+    return this.users[idx];
+  }
+
+  exportUserData(userId: string) {
+    const user = this.getUserById(userId);
+    if (!user) throw new Error('User not found');
+    const cards = this.nfcCards.filter(c => c.assigned_user_id === userId);
+    const visits = this.visitsLog.filter(v => v.client_id === userId);
+    const badges = this.getUserBadges(userId);
+    return buildDataExport([user], cards, visits, badges as any[]);
+  }
+
+  // Ștergere completă cont client (GDPR Art. 17 "dreptul la uitare"):
+  // - vizitele devin anonimizate (păstrate statistic obligatoriu, fără legătură cu persoana)
+  // - cardul asociat se dezactivează și se eliberează
+  // - badge-urile utilizatorului se șterg
+  // - profilul utilizatorului se anonimizează
+  deleteClientAccount(userId: string) {
+    const user = this.getUserById(userId);
+    if (!user) throw new Error('Utilizatorul nu a fost găsit.');
+    if (user.role !== 'client') throw new Error('Doar conturile de tip client pot fi șterse prin dreptul la uitare.');
+
+    // 1. Anonimizează vizitele (istoricul financiar rămâne pentru evidența barului, dar fără PII)
+    this.visitsLog = this.visitsLog.map(v =>
+      v.client_id === userId ? { ...v, client_id: 'anonymized' } : v
+    );
+    this.save('merlot_visits', this.visitsLog);
+
+    // 2. Eliberează cardurile asociate
+    this.nfcCards = this.nfcCards.map(c =>
+      c.assigned_user_id === userId ? { ...c, assigned_user_id: null, status: 'unassigned' as CardStatus } : c
+    );
+    this.save('merlot_cards', this.nfcCards);
+
+    // 3. Șterge badge-urile
+    this.userBadges = this.userBadges.filter(ub => ub.user_id !== userId);
+    this.save('merlot_user_badges', this.userBadges);
+
+    // 4. Anonimizează profilul
+    this.users = this.users.map(u =>
+      u.id === userId
+        ? { ...u, name: 'Client Șters (GDPR)', email: `deleted-${u.id.slice(0, 8)}@anon.local`, phone: null, avatar: '🗑️', gdpr_consent_accepted: false, gdpr_consent_at: null }
+        : u
+    );
+    this.save('merlot_users', this.users);
+
+    if (this.currentUser?.id === userId) this.setCurrentUser(null);
+    return { success: true };
   }
 
   // Auth
@@ -900,6 +1010,13 @@ if (!client) {
       if (fnName === 'award_badges_for_visit') {
         return Promise.resolve({ data: mockStore.checkAndAwardBadges(params.p_client_id), error: null });
       }
+      if (fnName === 'gdpr_delete_account') {
+        try {
+          return Promise.resolve({ data: mockStore.deleteClientAccount(params.p_user_id), error: null });
+        } catch (e: any) {
+          return Promise.resolve({ data: null, error: { message: e?.message || 'GDPR delete failed' } });
+        }
+      }
       return Promise.resolve({ data: null, error: null });
     },
   };
@@ -1058,6 +1175,56 @@ export const db = {
       }
       return mockStore.updateUser(id, updates);
     },
+
+    // GDPR Art. 6(1)(a) + Art. 7 — înregistrare consimțământ explicit cu timestamp
+    async acceptGdprConsent(id: string) {
+      if (isSupabaseConfigured) {
+        try {
+          const { data, error } = await supabase
+            .from('users')
+            .update({ gdpr_consent_accepted: true, gdpr_consent_at: new Date().toISOString() })
+            .eq('id', id)
+            .select()
+            .single();
+          if (!error && data) return data as User;
+        } catch { /* fallback */ }
+      }
+      return mockStore.acceptGdprConsent(id);
+    },
+
+    // GDPR Art. 20 — dreptul la portabilitate: export complet al datelor personale
+    async exportPersonalData(id: string) {
+      if (isSupabaseConfigured) {
+        try {
+          const [{ data: profile }, cards, visits, badges] = await Promise.all([
+            supabase.from('users').select('*').eq('id', id).single(),
+            supabase.from('nfc_cards').select('*').eq('assigned_user_id', id),
+            supabase.from('visits_log').select('*').eq('client_id', id).order('scanned_at', { ascending: false }),
+            supabase.from('user_badges').select('*, badges:badge_id (name)').eq('user_id', id),
+          ]);
+          if (profile) {
+            return buildDataExport(
+              [profile as User],
+              (cards ?? []) as NFCCard[],
+              (visits ?? []) as VisitLog[],
+              (badges ?? []) as UserBadge[]
+            );
+          }
+        } catch { /* fallback */ }
+      }
+      return mockStore.exportUserData(id);
+    },
+
+    // GDPR Art. 17 — dreptul la uitare: ștergere/anonimizare cont client
+    async deleteAccount(id: string) {
+      if (isSupabaseConfigured) {
+        try {
+          const { error } = await supabase.rpc('gdpr_delete_account', { p_user_id: id });
+          if (!error) return { success: true };
+        } catch { /* fallback */ }
+      }
+      return mockStore.deleteClientAccount(id);
+    },
   },
 
   // ---------- NFC CARDS ----------
@@ -1131,6 +1298,24 @@ export const db = {
         } catch { /* fallback */ }
       }
       return mockStore.blockCard(cardId);
+    },
+
+    async unblock(cardId: string) {
+      if (isSupabaseConfigured) {
+        try {
+          // Reactivare: active dacă e atribuit, altfel revine la unassigned
+          const { data: card } = await supabase.from('nfc_cards').select('*').eq('id', cardId).single();
+          const newStatus = card?.assigned_user_id ? 'active' : 'unassigned';
+          const { data, error } = await supabase
+            .from('nfc_cards')
+            .update({ status: newStatus })
+            .eq('id', cardId)
+            .select()
+            .single();
+          if (!error && data) return data as NFCCard;
+        } catch { /* fallback */ }
+      }
+      return mockStore.unblockCard(cardId);
     },
 
     async create(card_uuid: string) {
