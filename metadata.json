@@ -1,0 +1,8 @@
+{
+  "name": "Merlot VIP System",
+  "description": "NFC VIP loyalty, real-time discount calculation, and member access management for Merlot Wine Bar & Lounge.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
