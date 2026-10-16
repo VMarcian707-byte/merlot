@@ -195,6 +195,18 @@ BEGIN
     RETURN jsonb_build_object('valid', false, 'message', 'Card neasociat unui client.');
   END IF;
   
+  -- Anti-fraud: cooldown per card (o singură scanare validă / 2 minute)
+  IF EXISTS (
+    SELECT 1 FROM visits_log
+    WHERE card_id = v_card.id
+    AND scanned_at > NOW() - INTERVAL '2 minutes'
+  ) THEN
+    RETURN jsonb_build_object(
+      'valid', false,
+      'message', 'Card scanat recent! Așteptați 2 minute între scanări.'
+    );
+  END IF;
+  
   -- Get client
   SELECT * INTO v_client FROM users WHERE id = v_card.assigned_user_id;
   
