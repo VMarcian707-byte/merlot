@@ -84,9 +84,10 @@ export default function BadgeShowcase() {
                     <Sparkles className="w-3 h-3" />
                     <span>
                       {badge.requirement_type === 'visits' && `${badge.requirement_value} vizite`}
-                      {badge.requirement_type === 'referrals' && `${badge.requirement_value} referali`}
                       {badge.requirement_type === 'streak' && `${badge.requirement_value} zile consecutive`}
+                      {badge.requirement_type === 'spending' && `${badge.requirement_value} lei cheltuiți`}
                       {badge.requirement_type === 'special' && 'Special'}
+                      {badge.requirement_type === 'manual' && 'Manual'}
                     </span>
                   </div>
                 </div>

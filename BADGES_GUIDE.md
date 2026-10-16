@@ -45,8 +45,6 @@ Sistemul de badge-uri adaugă un element de **gamification** care motivează cli
 |-------|-------|---------|---------|
 | **Early Bird** | 🌅 | Vizită înainte de 19:00 | Portocaliu |
 | **Weekend Warrior** | 🎊 | 5 vizite în weekend | Violet |
-| **Social Butterfly** | 🦋 | 3 referali | Roz |
-| **Trendsetter** | 🌟 | 10 referali | Violet |
 | **Streak Master** | 🔥 | 3 vizite consecutive | Roșu |
 | **Unstoppable** | 💪 | 7 vizite consecutive | Roșu închis |
 
@@ -211,18 +209,18 @@ requirement_type = 'visits'
 requirement_value = 10  -- 10 vizite
 ```
 
-### `referrals`
-Badge-uri bazate pe numărul de referali:
-```sql
-requirement_type = 'referrals'
-requirement_value = 5  -- 5 referali
-```
-
 ### `streak`
 Badge-uri bazate pe vizite consecutive:
 ```sql
 requirement_type = 'streak'
 requirement_value = 7  -- 7 zile consecutive
+```
+
+### `spending`
+Badge-uri bazate pe suma totală cheltuită:
+```sql
+requirement_type = 'spending'
+requirement_value = 500  -- 500 lei cheltuiți
 ```
 
 ### `special`
@@ -297,7 +295,6 @@ SELECT award_badges_for_visit('client-uuid-here');
 - **Retenție**: +40% (clienții revin pentru badge-uri)
 - **Vizite/lună**: +60% (motivație pentru milestone-uri)
 - **Timp în aplicație**: +30% (clienții își verifică badge-urile)
-- **Referali**: +50% (badge-uri pentru referali)
 
 ---
 

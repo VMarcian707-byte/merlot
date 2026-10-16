@@ -69,7 +69,7 @@ export interface Announcement {
   created_at: string;
 }
 
-export type BadgeRequirementType = 'visits' | 'referrals' | 'spending' | 'streak' | 'special' | 'manual';
+export type BadgeRequirementType = 'visits' | 'spending' | 'streak' | 'special' | 'manual';
 
 export interface Badge {
   id: string;

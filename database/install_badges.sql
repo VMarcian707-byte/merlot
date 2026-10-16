@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS badges (
   description TEXT,
   emoji VARCHAR(10),
   icon_color VARCHAR(20) DEFAULT '#D4AF37',
-  requirement_type VARCHAR(50) NOT NULL CHECK (requirement_type IN ('visits', 'referrals', 'spending', 'streak', 'special', 'manual')),
+  requirement_type VARCHAR(50) NOT NULL CHECK (requirement_type IN ('visits', 'spending', 'streak', 'special', 'manual')),
   requirement_value INTEGER NOT NULL,
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMPTZ DEFAULT NOW()
@@ -74,8 +74,6 @@ VALUES
   ('vip_100', 'VIP Platinum', 'Ai vizitat Merlot de 100 ori!', '💎', '#E5E4E2', 'visits', 100, TRUE),
   ('early_bird', 'Early Bird', 'Ai venit înainte de ora 19:00', '🌅', '#FB923C', 'special', 0, TRUE),
   ('weekend_warrior', 'Weekend Warrior', 'Ai vizitat Merlot în weekend de 5 ori', '🎊', '#A855F7', 'visits', 5, TRUE),
-  ('social_butterfly', 'Social Butterfly', 'Ai recomandat 3 prieteni', '🦋', '#EC4899', 'referrals', 3, TRUE),
-  ('trendsetter', 'Trendsetter', 'Ai recomandat 10 prieteni', '🌟', '#8B5CF6', 'referrals', 10, TRUE),
   ('streak_3', 'Streak Master', '3 vizite consecutive în aceeași săptămână', '🔥', '#EF4444', 'streak', 3, TRUE),
   ('streak_7', 'Unstoppable', '7 vizite consecutive în aceeași săptămână', '💪', '#DC2626', 'streak', 7, TRUE)
 ON CONFLICT (code) DO NOTHING;

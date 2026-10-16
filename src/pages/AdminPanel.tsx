@@ -442,7 +442,6 @@ export default function AdminPanel() {
                   { emoji: '🥇', name: 'VIP Gold', desc: '50 vizite', color: '#FFD700' },
                   { emoji: '💎', name: 'VIP Platinum', desc: '100 vizite', color: '#E5E4E2' },
                   { emoji: '🌅', name: 'Early Bird', desc: 'Special', color: '#FB923C' },
-                  { emoji: '🦋', name: 'Social Butterfly', desc: '3 referali', color: '#EC4899' },
                   { emoji: '🔥', name: 'Streak Master', desc: '3 zile consecutive', color: '#EF4444' },
                 ].map((badge, idx) => (
                   <div
