@@ -73,6 +73,13 @@ export interface Announcement {
   created_at: string;
 }
 
+// ============================================
+// CONSTANTE ANTI-FRAUDĂ (sincronizate cu funcția SQL scan_nfc_card)
+// Modifică aici și în database/schema.sql + database/anti_fraud.sql deopotriva.
+// ============================================
+export const SCAN_COOLDOWN_MS = 2 * 60 * 1000;      // 2 minute între scanări valide pentru același card
+export const BARMAN_MAX_SCANS_PER_HOUR = 10;         // max 10 scanări valide / oră / barman
+
 export type BadgeRequirementType = 'visits' | 'spending' | 'streak' | 'special' | 'manual';
 
 export interface Badge {
@@ -579,68 +586,51 @@ class MockStore {
     };
   }
 
-  // Scan atomic with optional bill amount calculation
+  // Scan atomic with optional bill amount calculation + anti-fraud protection
   scanCard(cardUuid: string, barmanId: string, billAmount?: number) {
+    const invalidResult = (message: string) => ({
+      valid: false,
+      discount: '0%',
+      discount_percentage: 0,
+      client_name: '',
+      client_phone: '',
+      client_avatar: '',
+      card_uuid: cardUuid,
+      total_visits: 0,
+      rule_name: '',
+      message,
+    });
+
     const card = this.getCardByUUID(cardUuid);
-    if (!card) {
-      return {
-        valid: false,
-        discount: '0%',
-        discount_percentage: 0,
-        client_name: '',
-        client_phone: '',
-        client_avatar: '',
-        card_uuid: cardUuid,
-        total_visits: 0,
-        rule_name: '',
-        message: 'Card NFC necunoscut',
-      };
-    }
+    if (!card) return invalidResult('Card NFC necunoscut');
 
-    if (card.status === 'blocked') {
-      return {
-        valid: false,
-        discount: '0%',
-        discount_percentage: 0,
-        client_name: '',
-        client_phone: '',
-        client_avatar: '',
-        card_uuid: cardUuid,
-        total_visits: 0,
-        rule_name: '',
-        message: 'Card BLOCAT! Contactați managerul.',
-      };
-    }
+    if (card.status === 'blocked') return invalidResult('Card BLOCAT! Contactați managerul.');
 
-    if (!card.assigned_user_id) {
-      return {
-        valid: false,
-        discount: '0%',
-        discount_percentage: 0,
-        client_name: '',
-        client_phone: '',
-        client_avatar: '',
-        card_uuid: cardUuid,
-        total_visits: 0,
-        rule_name: '',
-        message: 'Card neasociat unui client.',
-      };
-    }
+    if (!card.assigned_user_id) return invalidResult('Card neasociat unui client.');
 
     const client = this.getUserById(card.assigned_user_id);
-    if (!client) {
-      return {
-        valid: false,
-        discount: '0%',
-        discount_percentage: 0,
-        client_name: '',
-        client_phone: '',
-        client_avatar: '',
-        card_uuid: cardUuid,
-        total_visits: 0,
-        rule_name: '',
-        message: 'Clientul asociat nu a fost găsit.',
-      };
+    if (!client) return invalidResult('Clientul asociat nu a fost găsit.');
+
+    // ===== PROTECȚIE ANTI-FRAUDĂ (sincronizată cu funcția SQL scan_nfc_card) =====
+    const now = Date.now();
+    const lastScan = this.visitsLog
+      .filter(v => v.card_id === card.id)
+      .map(v => new Date(v.scanned_at).getTime())
+      .reduce((max, t) => Math.max(max, t), 0);
+
+    // 1. Cooldown per card: o singură scanare validă la 2 minute
+    if (lastScan && now - lastScan < SCAN_COOLDOWN_MS) {
+      const waitSec = Math.ceil((SCAN_COOLDOWN_MS - (now - lastScan)) / 1000);
+      return invalidResult(`⛔ Card scanat recent! Așteptați ${waitSec}s între scanări (anti-fraud).`);
+    }
+
+    // 2. Rate limiting per barman: max 10 scanări valide / oră
+    const hourAgo = now - 60 * 60 * 1000;
+    const barmanScansLastHour = this.visitsLog.filter(
+      v => v.barman_id === barmanId && new Date(v.scanned_at).getTime() > hourAgo
+    ).length;
+    if (barmanScansLastHour >= BARMAN_MAX_SCANS_PER_HOUR) {
+      return invalidResult(`⛔ Limită atinsă: maxim ${BARMAN_MAX_SCANS_PER_HOUR} scanări/oră pentru acest barman.`);
     }
 
     const { rule } = calculateActiveDiscount(this.discountRules);
