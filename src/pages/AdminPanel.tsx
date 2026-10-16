@@ -6,11 +6,11 @@ import {
   LogOut, Users, CreditCard, Bell, BarChart3, Settings, Plus,
   Ban, CheckCircle, XCircle, Send, Calendar, Clock, Percent,
   TrendingUp, UserCheck, ScanLine, Shield, BookOpen, Sparkles,
-  Crown, Gem, Wine, ChevronRight, Zap, Wifi, Edit, Trash2
+  Crown, Gem, Wine, ChevronRight, Zap, Wifi, Edit, Trash2, Trophy
 } from 'lucide-react';
 import { DiscountRule } from '../lib/supabase';
 
-type AdminTab = 'dashboard' | 'cards' | 'rules' | 'notifications' | 'docs';
+type AdminTab = 'dashboard' | 'cards' | 'rules' | 'badges' | 'notifications' | 'docs';
 
 export default function AdminPanel() {
   const {
@@ -98,6 +98,7 @@ export default function AdminPanel() {
     { id: 'dashboard', label: 'Dashboard', icon: <BarChart3 className="w-5 h-5" /> },
     { id: 'cards', label: 'Carduri', icon: <CreditCard className="w-5 h-5" /> },
     { id: 'rules', label: 'Reguli', icon: <Settings className="w-5 h-5" /> },
+    { id: 'badges', label: 'Badge-uri', icon: <Trophy className="w-5 h-5" /> },
     { id: 'notifications', label: 'Notificări', icon: <Bell className="w-5 h-5" /> },
     { id: 'docs', label: 'Docs', icon: <BookOpen className="w-5 h-5" /> },
   ];
@@ -409,6 +410,67 @@ export default function AdminPanel() {
                 onSave={handleSaveRule}
               />
             )}
+          </div>
+        )}
+
+        {/* Badges Management */}
+        {activeTab === 'badges' && (
+          <div className="space-y-5 animate-fade-in">
+            <div className="text-center mb-6 animate-slide-up">
+              <p className="font-accent text-[#D4AF37]/60 text-xs tracking-[0.3em] uppercase italic mb-2">
+                Gamification
+              </p>
+              <h2 className="font-display text-2xl text-white">Gestionare Badge-uri</h2>
+            </div>
+
+            <div className="card-luxury animate-slide-up stagger-1">
+              <div className="flex items-center gap-2 mb-4">
+                <Trophy className="w-5 h-5 text-[#D4AF37]" />
+                <h3 className="font-display text-lg text-white">Badge-uri Disponibile</h3>
+              </div>
+              <p className="text-sm text-white/60 mb-6">
+                Badge-urile sunt acordate automat clienților când ating anumite milestone-uri. 
+                Acestea sunt definite în baza de date și pot fi gestionate direct din Supabase.
+              </p>
+
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {[
+                  { emoji: '🎉', name: 'Prima Vizită', desc: '1 vizită', color: '#10B981' },
+                  { emoji: '⭐', name: 'Client Fidel', desc: '5 vizite', color: '#F59E0B' },
+                  { emoji: '🥉', name: 'VIP Bronze', desc: '10 vizite', color: '#CD7F32' },
+                  { emoji: '🥈', name: 'VIP Silver', desc: '25 vizite', color: '#C0C0C0' },
+                  { emoji: '🥇', name: 'VIP Gold', desc: '50 vizite', color: '#FFD700' },
+                  { emoji: '💎', name: 'VIP Platinum', desc: '100 vizite', color: '#E5E4E2' },
+                  { emoji: '🌅', name: 'Early Bird', desc: 'Special', color: '#FB923C' },
+                  { emoji: '🦋', name: 'Social Butterfly', desc: '3 referali', color: '#EC4899' },
+                  { emoji: '🔥', name: 'Streak Master', desc: '3 zile consecutive', color: '#EF4444' },
+                ].map((badge, idx) => (
+                  <div
+                    key={idx}
+                    className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] text-center hover:border-[#D4AF37]/30 transition-all duration-300"
+                  >
+                    <div 
+                      className="w-12 h-12 mx-auto mb-2 rounded-full flex items-center justify-center text-2xl"
+                      style={{ backgroundColor: `${badge.color}20` }}
+                    >
+                      {badge.emoji}
+                    </div>
+                    <h4 className="font-display text-sm text-white mb-1">{badge.name}</h4>
+                    <p className="text-xs text-white/40">{badge.desc}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 p-4 rounded-xl bg-[#D4AF37]/5 border border-[#D4AF37]/20">
+                <p className="text-sm text-[#D4AF37] font-medium mb-2">💡 Cum funcționează:</p>
+                <ul className="text-xs text-white/60 space-y-1">
+                  <li>• Badge-urile sunt acordate automat la fiecare scanare NFC</li>
+                  <li>• Clienții își văd badge-urile în dashboard-ul lor</li>
+                  <li>• Badge-urile deblocate motivează clienții să revină</li>
+                  <li>• Poți adăuga badge-uri noi direct din Supabase SQL Editor</li>
+                </ul>
+              </div>
+            </div>
           </div>
         )}
 

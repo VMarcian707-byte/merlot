@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { 
   supabase, db, auth, 
-  User, NFCCard, DiscountRule, VisitLog, Announcement, 
+  User, NFCCard, DiscountRule, VisitLog, Announcement, Badge, UserBadge,
   generateUUID, calculateActiveDiscount 
 } from './lib/supabase';
 
@@ -17,6 +17,8 @@ interface AppState {
   discountRules: DiscountRule[];
   visitsLog: VisitLog[];
   announcements: Announcement[];
+  badges: Badge[];
+  userBadges: UserBadge[];
   dashboardStats: {
     total_clients: number;
     active_cards: number;
@@ -39,6 +41,8 @@ interface AppState {
   refreshRules: () => Promise<void>;
   refreshVisits: () => Promise<void>;
   refreshAnnouncements: () => Promise<void>;
+  refreshBadges: () => Promise<void>;
+  refreshUserBadges: () => Promise<void>;
 
   // Card Actions
   assignCard: (cardId: string, userId: string) => Promise<void>;
@@ -67,6 +71,9 @@ interface AppState {
 
   // Announcement Actions
   addAnnouncement: (title: string, message: string, eventDate: string, target: 'all' | 'vip' | 'regular') => Promise<void>;
+
+  // Badge Actions
+  checkAndAwardBadges: (userId: string) => Promise<any>;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -79,6 +86,8 @@ export const useStore = create<AppState>((set, get) => ({
   discountRules: [],
   visitsLog: [],
   announcements: [],
+  badges: [],
+  userBadges: [],
   dashboardStats: null,
 
   // ============================================
@@ -179,6 +188,8 @@ export const useStore = create<AppState>((set, get) => ({
       get().refreshRules(),
       get().refreshVisits(),
       get().refreshAnnouncements(),
+      get().refreshBadges(),
+      get().refreshUserBadges(),
     ]);
   },
 
@@ -224,6 +235,38 @@ export const useStore = create<AppState>((set, get) => ({
       set({ announcements });
     } catch (error) {
       console.error('Error fetching announcements:', error);
+    }
+  },
+
+  refreshBadges: async () => {
+    try {
+      const badges = await db.badges.getAll();
+      set({ badges });
+    } catch (error) {
+      console.error('Error fetching badges:', error);
+    }
+  },
+
+  refreshUserBadges: async () => {
+    try {
+      const currentUser = get().currentUser;
+      if (!currentUser) return;
+      
+      const userBadgesData = await db.badges.getUserBadges(currentUser.id);
+      const userBadges = userBadgesData.map(ub => ({
+        id: ub.id,
+        user_id: ub.user_id,
+        badge_id: ub.badge_id,
+        earned_at: ub.earned_at,
+        code: ub.badges?.code,
+        name: ub.badges?.name,
+        description: ub.badges?.description,
+        emoji: ub.badges?.emoji,
+        icon_color: ub.badges?.icon_color,
+      }));
+      set({ userBadges });
+    } catch (error) {
+      console.error('Error fetching user badges:', error);
     }
   },
 
@@ -359,6 +402,20 @@ export const useStore = create<AppState>((set, get) => ({
       await get().refreshAnnouncements();
     } catch (error) {
       console.error('Error creating announcement:', error);
+      throw error;
+    }
+  },
+
+  // ============================================
+  // BADGE ACTIONS
+  // ============================================
+  checkAndAwardBadges: async (userId: string) => {
+    try {
+      const result = await db.badges.checkAndAwardBadges(userId);
+      await get().refreshUserBadges();
+      return result;
+    } catch (error) {
+      console.error('Error checking badges:', error);
       throw error;
     }
   },

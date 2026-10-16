@@ -69,6 +69,34 @@ export interface Announcement {
   created_at: string;
 }
 
+export type BadgeRequirementType = 'visits' | 'referrals' | 'spending' | 'streak' | 'special' | 'manual';
+
+export interface Badge {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  emoji: string | null;
+  icon_color: string;
+  requirement_type: BadgeRequirementType;
+  requirement_value: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface UserBadge {
+  id: string;
+  user_id: string;
+  badge_id: string;
+  earned_at: string;
+  // Joined fields
+  code?: string;
+  name?: string;
+  description?: string | null;
+  emoji?: string | null;
+  icon_color?: string;
+}
+
 // ============================================
 // DATABASE API
 // ============================================
@@ -366,6 +394,71 @@ export const db = {
         .single();
       if (error) throw error;
       return data as Announcement;
+    },
+  },
+
+  // ---------- BADGES ----------
+  badges: {
+    async getAll() {
+      const { data, error } = await supabase
+        .from('badges')
+        .select('*')
+        .eq('is_active', true)
+        .order('requirement_value', { ascending: true });
+      if (error) throw error;
+      return data as Badge[];
+    },
+
+    async getByCode(code: string) {
+      const { data, error } = await supabase
+        .from('badges')
+        .select('*')
+        .eq('code', code)
+        .single();
+      if (error) throw error;
+      return data as Badge;
+    },
+
+    async getUserBadges(userId: string) {
+      const { data, error } = await supabase
+        .from('user_badges')
+        .select(`
+          *,
+          badges:badge_id (
+            id,
+            code,
+            name,
+            description,
+            emoji,
+            icon_color
+          )
+        `)
+        .eq('user_id', userId)
+        .order('earned_at', { ascending: false });
+      if (error) throw error;
+      return data as any[];
+    },
+
+    async awardBadge(userId: string, badgeId: string) {
+      const { data, error } = await supabase
+        .from('user_badges')
+        .insert({ user_id: userId, badge_id: badgeId })
+        .select()
+        .single();
+      if (error) {
+        // Badge deja acordat
+        if (error.code === '23505') return null;
+        throw error;
+      }
+      return data as UserBadge;
+    },
+
+    async checkAndAwardBadges(userId: string) {
+      const { data, error } = await supabase.rpc('award_badges_for_visit', {
+        p_client_id: userId
+      });
+      if (error) throw error;
+      return data;
     },
   },
 };

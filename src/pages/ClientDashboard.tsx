@@ -4,10 +4,11 @@ import { LuxuryBackground, OrnamentDivider, GoldBadge, LuxuryCard, NoiseOverlay 
 import { 
   CreditCard, Bell, Calendar, History, LogOut, Clock, Percent, 
   PartyPopper, Wifi, Crown, Star, Sparkles, ChevronRight, MapPin,
-  Wine, Gem, X
+  Wine, Gem, X, Trophy
 } from 'lucide-react';
+import BadgeShowcase from '../components/BadgeShowcase';
 
-type Tab = 'card' | 'events' | 'history' | 'benefits';
+type Tab = 'card' | 'events' | 'history' | 'benefits' | 'badges';
 
 export default function ClientDashboard() {
   const { currentUser, logout, nfcCards, visitsLog, announcements, discountRules } = useStore();
@@ -48,6 +49,7 @@ export default function ClientDashboard() {
     { id: 'card', label: 'Cardul Meu', icon: <CreditCard className="w-5 h-5" /> },
     { id: 'benefits', label: 'Beneficii', icon: <Percent className="w-5 h-5" /> },
     { id: 'events', label: 'Evenimente', icon: <PartyPopper className="w-5 h-5" /> },
+    { id: 'badges', label: 'Badge-uri', icon: <Trophy className="w-5 h-5" /> },
     { id: 'history', label: 'Istoric', icon: <History className="w-5 h-5" /> },
   ];
 
@@ -365,6 +367,18 @@ export default function ClientDashboard() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === 'badges' && (
+          <div className="space-y-4 animate-fade-in">
+            <div className="text-center mb-6 animate-slide-up">
+              <p className="font-accent text-[#D4AF37]/60 text-xs tracking-[0.3em] uppercase italic mb-2">
+                Realizările tale
+              </p>
+              <h2 className="font-display text-2xl text-white">Badge-uri & Achievements</h2>
+            </div>
+            <BadgeShowcase />
           </div>
         )}
       </div>

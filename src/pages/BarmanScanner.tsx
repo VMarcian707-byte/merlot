@@ -33,6 +33,21 @@ export default function BarmanScanner() {
     setResult(null);
     setTimeout(async () => {
       const scanResult = await scanCard(cardUuid, currentUser.id);
+      
+      // Check and award badges if scan was successful
+      if (scanResult.valid) {
+        try {
+          const { checkAndAwardBadges } = useStore.getState();
+          const badgeResult = await checkAndAwardBadges(scanResult.client_name);
+          if (badgeResult && badgeResult.new_badges && badgeResult.new_badges.length > 0) {
+            // Add badge info to result
+            scanResult.message += ` 🏆 ${badgeResult.new_badges.length} badge-uri noi câștigate!`;
+          }
+        } catch (error) {
+          console.error('Error checking badges:', error);
+        }
+      }
+      
       setResult(scanResult);
       setScanning(false);
     }, 1500);
