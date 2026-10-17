@@ -464,12 +464,12 @@ class MockStore {
   // Cards
   getCards() { return [...this.nfcCards]; }
   getCardByUUID(uuid: string) { return this.nfcCards.find(c => c.card_uuid.toLowerCase() === uuid.toLowerCase()) || null; }
-  addCard(uuid: string) {
+  addCard(uuid: string, assignedUserId?: string | null) {
     const card: NFCCard = {
       id: generateUUID(),
       card_uuid: uuid,
-      assigned_user_id: null,
-      status: 'unassigned',
+      assigned_user_id: assignedUserId ?? null,
+      status: assignedUserId ? 'active' : 'unassigned',
       issued_at: new Date().toISOString(),
     };
     this.nfcCards.unshift(card);
@@ -1318,18 +1318,22 @@ export const db = {
       return mockStore.unblockCard(cardId);
     },
 
-    async create(card_uuid: string) {
+    async create(card_uuid: string, assignedUserId?: string | null) {
       if (isSupabaseConfigured) {
         try {
           const { data, error } = await supabase
             .from('nfc_cards')
-            .insert({ card_uuid, status: 'unassigned' })
+            .insert({
+              card_uuid,
+              assigned_user_id: assignedUserId ?? null,
+              status: assignedUserId ? 'active' : 'unassigned',
+            })
             .select()
             .single();
           if (!error && data) return data as NFCCard;
         } catch { /* fallback */ }
       }
-      return mockStore.addCard(card_uuid);
+      return mockStore.addCard(card_uuid, assignedUserId);
     },
   },
 
@@ -1703,15 +1707,37 @@ export const auth = {
   },
 
   async resetPasswordForEmail(email: string, options?: { redirectTo?: string }) {
+    // Token local (modul demo/mock — folosit ca fallback DOAR daca email-ul real nu poate fi trimis)
     const record = mockStore.createResetToken(email);
-    if (isSupabaseConfigured) {
-      try {
-        await supabase.auth.resetPasswordForEmail(email, options);
-      } catch (err) {
-        console.warn('Real Supabase resetPasswordForEmail fallback to mock:', err);
-      }
+
+    if (!isSupabaseConfigured) {
+      return { ...record, delivered: false as const, via: 'demo' as const };
     }
-    return record;
+
+    // IMPORTANT: in registrul de erori Supabase-js, esecurile sunt returnate ca
+    // { data, error } — NU arunca o exceptie. Verificarea MUST se face pe `error`.
+    let res: any;
+    try {
+      res = await supabase.auth.resetPasswordForEmail(email, options);
+    } catch (err: any) {
+      console.error('[Merlot] Exceptie la resetPasswordForEmail:', err);
+      return { ...record, delivered: false as const, via: 'demo' as const, error: err?.message || String(err) };
+    }
+
+    if (res?.error) {
+      console.error('[Merlot] Supabase a respins trimiterea email-ului de resetare:', res.error);
+      // Mesaj actionabil pentru cele mai frecvente cauze (vezi RESET_PASSWORD_TROUBLESHOOTING.md)
+      const msg = String(res.error.message || '');
+      let hint = '';
+      if (/rate limit/i.test(msg)) hint = ' Ai atins limita de emailuri a proiectului Supabase (implicit ~2/ora pe SMTP-ul gratuit). Asteapta sau configureaza SMTP custom.';
+      else if (/redirect|not allowed/i.test(msg)) hint = ' Adresa site-ului nu este in lista Allowed Redirect URLs (Supabase Dashboard → Authentication → URL Configuration).';
+      else if (/signing key|jwt/i.test(msg)) hint = ' Project keys au fost rotite recent — actualizeaza VITE_SUPABASE_ANON_KEY in .env si redeployeaza.';
+      else if (/smtp|sendgrid|mailgun|resend|relay/i.test(msg)) hint = ' Configuratia SMTP din Supabase (Authentication → Email → SMTP) este invalida.';
+      return { ...record, delivered: false as const, via: 'demo' as const, error: msg + hint };
+    }
+
+    // Succes: email-ul a fost ACCEPTAT de serverul Supabase pentru livrare.
+    return { ...record, delivered: true as const, via: 'email' as const };
   },
 
   async updateUserPassword(emailOrId: string, newPassword: string) {

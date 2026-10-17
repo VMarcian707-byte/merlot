@@ -184,20 +184,30 @@ DECLARE
   v_barman_scans_hour INTEGER;
   v_discount_amount NUMERIC;
   v_final_amount NUMERIC;
+  v_lookup_uuid TEXT;
 BEGIN
+  -- Normalizare: QR-urile pot contine spatiu/tabs; matching case-insensitive
+  -- (cardurile QR au prefixul 'QR:' in card_uuid)
+  v_lookup_uuid := UPPER(TRIM(p_card_uuid));
+
   -- 1. Gaseste cardul
-  SELECT * INTO v_card FROM nfc_cards WHERE card_uuid = p_card_uuid;
+  SELECT * INTO v_card FROM nfc_cards WHERE UPPER(card_uuid) = v_lookup_uuid;
 
   IF v_card IS NULL THEN
-    RETURN jsonb_build_object('valid', false, 'message', 'Card NFC necunoscut');
+    RETURN jsonb_build_object('valid', false, 'message', 'Card NFC/QR necunoscut', 'reason', 'unknown_card');
   END IF;
 
+  -- VERIFICARE STATUS CARD LA SCANARE (block/unassigned/inactive respinse oricand)
   IF v_card.status = 'blocked' THEN
-    RETURN jsonb_build_object('valid', false, 'message', 'Card BLOCAT! Contactati managerul.');
+    RETURN jsonb_build_object('valid', false, 'message', 'Card BLOCAT de manager! Acces refuzat.', 'reason', 'card_blocked');
   END IF;
 
-  IF v_card.assigned_user_id IS NULL THEN
-    RETURN jsonb_build_object('valid', false, 'message', 'Card neasociat unui client.');
+  IF v_card.status = 'unassigned' OR v_card.assigned_user_id IS NULL THEN
+    RETURN jsonb_build_object('valid', false, 'message', 'Card neasociat unui client. Solicita asocierea la bar.', 'reason', 'card_unassigned');
+  END IF;
+
+  IF v_card.status <> 'active' THEN
+    RETURN jsonb_build_object('valid', false, 'message', 'Card inactiv. Acces refuzat.', 'reason', 'card_inactive');
   END IF;
 
   -- ============================================
@@ -214,7 +224,8 @@ BEGIN
   IF v_last_scan IS NOT NULL THEN
     RETURN jsonb_build_object(
       'valid', false,
-      'message', 'Card scanat recent! Asteptati 2 minute intre scanari (anti-fraud).'
+      'message', 'Card scanat recent! Asteptati 2 minute intre scanari (anti-fraud).',
+      'reason', 'cooldown'
     );
   END IF;
 
@@ -227,7 +238,8 @@ BEGIN
   IF v_barman_scans_hour >= 10 THEN
     RETURN jsonb_build_object(
       'valid', false,
-      'message', 'Limita atinsa: maxim 10 scanari/ora pentru acest barman.'
+      'message', 'Limita atinsa: maxim 10 scanari/ora pentru acest barman.',
+      'reason', 'barman_rate_limit'
     );
   END IF;
 
@@ -236,6 +248,10 @@ BEGIN
 
   -- 2. Gaseste clientul
   SELECT * INTO v_client FROM users WHERE id = v_card.assigned_user_id;
+
+  IF v_client IS NULL THEN
+    RETURN jsonb_build_object('valid', false, 'message', 'Clientul asociat nu a fost gasit (cont sters GDPR).', 'reason', 'client_missing');
+  END IF;
 
   -- 3. Calculeaza cel mai bun discount activ
   FOR v_rule IN

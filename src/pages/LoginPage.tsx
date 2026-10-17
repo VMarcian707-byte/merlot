@@ -8,6 +8,8 @@ import { Wine, Sparkles, ArrowRight, Database, Mail, CheckCircle, Eye, Copy, Che
 export default function LoginPage() {
   const { login, registerClient } = useStore();
   const [mode, setMode] = useState<'login' | 'register' | 'forgot'>('login');
+  const [resetDelivery, setResetDelivery] = useState<'email' | 'demo' | null>(null);
+  const [resetError, setResetError] = useState<string | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -71,6 +73,9 @@ export default function LoginPage() {
         resetUrl: record.resetUrl,
         token: record.token,
       });
+      // Reflectă REALIV statusul livrării email-ului (nu promite un email care nu a fost trimis)
+      setResetDelivery(record.delivered ? 'email' : 'demo');
+      setResetError(record.delivered ? null : (record as any).error ?? null);
       setResetSent(true);
     } catch (err: any) {
       setError(err?.message || 'Eroare la generarea cererii de resetare');
@@ -328,17 +333,48 @@ export default function LoginPage() {
               ) : (
                 <div className="space-y-4 py-2 animate-fade-in">
                   <div className="text-center">
-                    <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-emerald-500/20 to-[#722F37]/30 border border-emerald-500/40 flex items-center justify-center glow-wine">
-                      <CheckCircle className="w-9 h-9 text-emerald-400" />
+                    <div className={`w-16 h-16 mx-auto mb-3 rounded-full border flex items-center justify-center glow-wine ${
+                      resetDelivery === 'email'
+                        ? 'bg-gradient-to-br from-emerald-500/20 to-[#722F37]/30 border-emerald-500/40'
+                        : 'bg-gradient-to-br from-amber-500/20 to-[#722F37]/30 border-amber-500/40'
+                    }`}>
+                      {resetDelivery === 'email' ? (
+                        <CheckCircle className="w-9 h-9 text-emerald-400" />
+                      ) : (
+                        <Mail className="w-9 h-9 text-amber-400" />
+                      )}
                     </div>
-                    <h3 className="font-display text-xl text-white mb-1">Email VIP Transmis!</h3>
+                    <h3 className="font-display text-xl text-white mb-1">
+                      {resetDelivery === 'email' ? 'Email VIP Trimis!' : 'Cerere Înregistrată (Mod Demo)'}
+                    </h3>
                     <p className="text-xs text-white/60">
-                      Am expediat solicitarea securizată către:
+                      {resetDelivery === 'email'
+                        ? 'Solicitarea securizată a fost trimisă către:'
+                        : 'Nu s-a putut trimite emailul real. Link-ul de mai jos este functional în acest browser:'}
                     </p>
                     <div className="inline-block mt-2 px-3 py-1 rounded-full bg-white/5 border border-[#D4AF37]/30 text-xs text-[#D4AF37] font-medium font-mono">
                       {resetData?.email || email}
                     </div>
+                    {resetDelivery === 'email' && (
+                      <p className="text-[11px] text-white/40 mt-2">
+                        Nu ați primit nimic? Verificați folderul <span className="text-white/70">Spam / Promotions</span>.
+                      </p>
+                    )}
                   </div>
+
+                  {resetError && (
+                    <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-[11px] text-red-300 leading-relaxed">
+                      <strong>Motiv:</strong> {resetError}
+                      <a
+                        href="https://supabase.com/dashboard"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block mt-1.5 text-[#D4AF37] underline underline-offset-2"
+                      >
+                        Deschide Supabase Dashboard → Authentication pentru remedieri →
+                      </a>
+                    </div>
+                  )}
 
                   {/* Primary Direct Action */}
                   <div className="p-4 rounded-xl bg-gradient-to-br from-[#722F37]/30 to-black/60 border border-[#D4AF37]/40 space-y-3">
@@ -393,14 +429,14 @@ export default function LoginPage() {
                   <div className="pt-2 flex items-center justify-between text-xs">
                     <button
                       type="button"
-                      onClick={() => { setResetSent(false); }}
+                      onClick={() => { setResetSent(false); setResetDelivery(null); setResetError(null); }}
                       className="text-white/40 hover:text-white/70 transition-colors cursor-pointer"
                     >
                       ← Trimite pentru alt cont
                     </button>
                     <button
                       type="button"
-                      onClick={() => { setMode('login'); setResetSent(false); }}
+                      onClick={() => { setMode('login'); setResetSent(false); setResetDelivery(null); setResetError(null); }}
                       className="text-[#D4AF37]/80 hover:text-[#D4AF37] transition-colors cursor-pointer"
                     >
                       Înapoi la Autentificare
