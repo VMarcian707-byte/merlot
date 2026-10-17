@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../store';
-import { supabase, auth, mockStore, User } from '../lib/supabase';
+import { supabase, auth, mockStore, isSupabaseConfigured, User } from '../lib/supabase';
 import { LuxuryBackground, OrnamentDivider, LuxuryButton, LuxuryInput } from '../components/LuxuryUI';
 import {
   KeyRound, CheckCircle2, AlertCircle, Eye, EyeOff, ShieldCheck,
@@ -23,6 +23,11 @@ export default function ResetPasswordPage() {
   const [countdown, setCountdown] = useState<number>(5);
 
   useEffect(() => {
+    // useEffect nu poate fi async direct -> initializam intr-o functie async
+    // separata, cu flag `cancelled` pentru a evita state updates dupa unmount.
+    let cancelled = false;
+
+    const initRecovery = async () => {
     // 1. Check URL search parameters (?token=...&email=... or ?code=...)
     const params = new URLSearchParams(window.location.search);
     const queryToken = params.get('token');
@@ -50,8 +55,25 @@ export default function ResetPasswordPage() {
       foundUser = mockStore.getUserByEmail(resolvedEmail);
     }
 
-    // 3. Fallback to latest reset token generated in mockStore
-    if (!foundUser) {
+    // 2b. Verificare reala cu Supabase: session de tip recovery (hash access_token)
+    //     sau cod PKCE (?code=...) — abilitate prin flowUrl din redirectTo.
+    let hasRealRecoverySession = false;
+    if ((hashToken && hashType === 'recovery') || pkceCode) {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data.session?.user) {
+          hasRealRecoverySession = true;
+          if (data.session.user.email) setDetectedEmail(data.session.user.email);
+        }
+      } catch (err) {
+        console.warn('[Merlot] Verificare sesiune recovery esuata:', err);
+      }
+    }
+
+    // 3. Fallback la ultimul token local, DOAR in mod demo (fara Supabase configurat).
+    //    In productie acest fallback permitea cuiva care deschide /reset-password fara
+    //    token valid sa schimbe parola altui utilizator — vulnerabilitate de securitate.
+    if (!foundUser && !isSupabaseConfigured) {
       const latest = mockStore.getLatestResetToken();
       if (latest && latest.user) {
         foundUser = latest.user;
@@ -59,18 +81,32 @@ export default function ResetPasswordPage() {
       }
     }
 
-    // 4. Fallback to demo client if in demo / test mode without strict token
+    if (cancelled) return;
+
+    // 4. Decide validitatea tokenului
     if (foundUser) {
       setTargetUser(foundUser);
-      setDetectedEmail(resolvedEmail);
+      if (resolvedEmail) setDetectedEmail(resolvedEmail);
       setIsValidToken(true);
-    } else if (hashToken || pkceCode) {
-      // Supabase native tokens present in URL
+    } else if (hasRealRecoverySession) {
+      // Sesiune reala de recovery confirmata de serverul Supabase
+      setIsValidToken(true);
+    } else if (isSupabaseConfigured && (hashToken || hashType === 'recovery' || pkceCode)) {
+      // Token in URL dar serverul NU a creat o sesiune de recovery valida
+      // (token expirat — implicit 60 min — sau deja folosit). Nu permitem reset.
+      setIsValidToken(false);
+      setError('Link-ul de resetare a expirat sau a fost deja folosit. Solicita un link nou.');
+    } else if (!isSupabaseConfigured && (hashToken || pkceCode)) {
+      // Mod demo cu token in URL
       setIsValidToken(true);
     } else {
       // No token found in URL or recent cache
       setIsValidToken(false);
     }
+    };
+
+    initRecovery();
+    return () => { cancelled = true; };
   }, []);
 
   // Handle countdown when success is reached
@@ -124,16 +160,36 @@ export default function ResetPasswordPage() {
 
     setIsLoading(true);
     try {
-      // 1. Try real Supabase auth update if available
-      try {
-        await supabase.auth.updateUser({
+      // 1. In productie (Supabase configurat): schimbarea parolei SE FACE DOAR pe
+      //    server, prin sesiunea de recovery creata din linkul de email.
+      //    Daca updateUser esueaza (token expirat/folosit), NU trebuie sa salvam
+      //    parola local in mockStore — altfel clientul ar vedea "succes" fals si
+      //    login-ul real cu parola noua ar esua.
+      if (isSupabaseConfigured) {
+        const { error: updateErr } = await supabase.auth.updateUser({
           password: password,
         });
-      } catch (err) {
-        console.warn('Supabase updateUser fallback to local mock store:', err);
+        if (updateErr) {
+          setError(
+            updateErr.message?.includes('session') || updateErr.message?.includes('auth')
+              ? 'Sesiunea de resetare a expirat. Solicita un nou link de pe ecranul de login.'
+              : `Nu s-a putut schimba parola: ${updateErr.message}`
+          );
+          setIsLoading(false);
+          return;
+        }
+      } else {
+        // Mod demo: incearca actualizarea reala, fallback la mock
+        try {
+          await supabase.auth.updateUser({
+            password: password,
+          });
+        } catch (err) {
+          console.warn('Supabase updateUser fallback to local mock store:', err);
+        }
       }
 
-      // 2. Always update in our auth / mockStore to ensure persistent login works immediately
+      // 2. Salveaza in mockStore pentru persistenta locala (mod demo / sync offline)
       const emailToUpdate = detectedEmail || targetUser?.email || 'client@merlot.ro';
       auth.updateUserPassword(emailToUpdate, password);
 
@@ -185,12 +241,19 @@ export default function ResetPasswordPage() {
             </div>
             <h2 className="font-display text-2xl text-white mb-2">Resetare Parolă VIP</h2>
             <div className="ornament-line w-20 mx-auto mb-2" />
+            {error ? (
+              <p className="text-xs text-red-300/90">{error}</p>
+            ) : (
             <p className="text-xs text-white/50">
               Link-ul nu conține un token activ sau a fost accesat direct în mod test.
             </p>
+            )}
           </div>
 
-          <div className="card-luxury space-y-4">
+          {/* In productie NU oferim selector de conturi — ar permite cuiva sa schimbe
+              parola altui utilizator fara linkul de email. Doar in mod demo. */}
+          {!isSupabaseConfigured && (
+            <div className="card-luxury space-y-4">
             <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center">
               <p className="text-xs text-amber-200/90 font-medium mb-1">
                 Alege un cont pentru a testa resetarea parolei:
@@ -234,6 +297,24 @@ export default function ResetPasswordPage() {
               </a>
             </div>
           </div>
+          )}
+
+          {/* In productie: doar mesaj explicativ + inapoi la login */}
+          {isSupabaseConfigured && (
+            <div className="card-luxury space-y-3">
+              <p className="text-center text-[11px] text-white/50">
+                Pentru a-ți schimba parola, accesează link-ul primit pe email. Dacă link-ul a
+                expirat (60 minute) sau a fost deja folosit, solicită unul nou de pe ecranul de
+                autentificare.
+              </p>
+              <a
+                href="/"
+                className="block w-full text-center py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-white/60 hover:text-white text-xs transition-colors"
+              >
+                ← Înapoi la Autentificare
+              </a>
+            </div>
+          )}
         </div>
       </div>
     );
