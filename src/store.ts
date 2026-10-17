@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { 
-  supabase, db, auth, 
+  supabase, db, auth, mockStore, isSupabaseConfigured, 
   User, NFCCard, DiscountRule, VisitLog, Announcement, Badge, UserBadge,
   generateUUID, calculateActiveDiscount 
 } from './lib/supabase';
@@ -68,7 +68,11 @@ interface AppState {
     bill_amount?: number;
     discount_amount?: number;
     final_amount?: number;
+    reason?: 'unknown_card' | 'card_blocked' | 'card_unassigned' | 'card_inactive' | 'client_missing' | 'cooldown' | 'barman_rate_limit';
   }>;
+
+  // QR Actions (fallback iOS — Web NFC nu există pe iPhone)
+  addQrCard: (qrContent: string, assignedUserId?: string | null) => Promise<NFCCard>;
 
   // Rule Actions
   toggleDiscountRule: (id: string) => Promise<void>;
@@ -334,18 +338,52 @@ export const useStore = create<AppState>((set, get) => ({
       return data as any;
     } catch (error) {
       console.error('Error scanning card:', error);
-      return {
-        valid: false,
-        discount: '0%',
-        discount_percentage: 0,
-        client_name: '',
-        client_phone: '',
-        client_avatar: '',
-        card_uuid: cardUuid,
-        total_visits: 0,
-        rule_name: '',
-        message: 'Eroare la scanare. Verificați conexiunea.'
-      };
+      // Fallback local: regulile anti-fraud & verificarea statusului cardului
+      // sunt identice cu funcția SQL scan_nfc_card (SCAN_COOLDOWN_MS / BARMAN_MAX_SCANS_PER_HOUR)
+      try {
+        return mockStore.scanCard(cardUuid, barmanId, billAmount);
+      } catch {
+        return {
+          valid: false,
+          discount: '0%',
+          discount_percentage: 0,
+          client_name: '',
+          client_phone: '',
+          client_avatar: '',
+          card_uuid: cardUuid,
+          total_visits: 0,
+          rule_name: '',
+          message: 'Eroare la scanare. Verificați conexiunea.'
+        };
+      }
+    }
+  },
+
+  // ============================================
+  // QR CARD ACTION (fallback iOS — Web NFC nu există pe iPhone)
+  // Cardul QR are prefix "QR:" în câmpul card_uuid; restul pipeline-ului
+  // (anti-fraud, status, calcul POS server-side) este identic cu NFC.
+  // ============================================
+  addQrCard: async (qrContent: string, assignedUserId?: string | null) => {
+    try {
+      let uuid = qrContent.trim();
+      // Dacă managerul scanează/tastează conținutul NDEF de pe card (ex: https://vip.merlot.ro/c/UUID), extragem UUID-ul
+      const urlMatch = uuid.match(/\/c\/([^?#]+)/i);
+      if (urlMatch) uuid = urlMatch[1];
+
+      const normalized = uuid.toUpperCase();
+      if (!normalized) throw new Error('Conținut QR gol.');
+      if (normalized.startsWith('QR:')) throw new Error('Acest cod QR este deja înregistrat.');
+      if (get().nfcCards.some(c => c.card_uuid.toUpperCase() === `QR:${normalized}`)) {
+        throw new Error('AEXISTĂ deja un card QR pentru acest cod!');
+      }
+
+      const card = await db.nfcCards.create(`QR:${normalized}`, assignedUserId ?? null);
+      await get().refreshCards();
+      return card;
+    } catch (error) {
+      console.error('Error creating QR card:', error);
+      throw error;
     }
   },
 

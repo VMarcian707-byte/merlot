@@ -798,7 +798,9 @@ async function handleScan(card_uuid, barman_id) {
                     {[
                       'UUID unic per card (32 chars, criptografic)',
                       'Validare server-side la fiecare scanare',
-                      'Rate limiting: max 1 scanare/card/minut',
+                      'Cooldown anti-fraud: max 1 scanare / 2 minute per card',
+                      'Rate limiting barman: max 10 scanări valide / oră',
+                      'Lock tranzacțional (FOR UPDATE) împotriva scanărilor simultane',
                       'Geolocație barman: doar din locația Merlot',
                       'Timestamp server-side (nu client-side)',
                       'NFC chip UID hardware-level (imposibil de clonat)',

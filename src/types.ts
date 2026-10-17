@@ -68,4 +68,6 @@ export interface ScanResult {
   bill_amount?: number;
   discount_amount?: number;
   final_amount?: number;
+  // Motivul respingerii (anti-fraud / status card) — pentru acțiuni contextuale în UI
+  reason?: 'unknown_card' | 'card_blocked' | 'card_unassigned' | 'card_inactive' | 'client_missing' | 'cooldown' | 'barman_rate_limit';
 }

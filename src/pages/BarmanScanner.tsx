@@ -64,7 +64,7 @@ export default function BarmanScanner() {
         card_uuid: '',
         total_visits: 0,
         rule_name: '',
-        message: 'Web NFC fizic nu este suportat în acest browser. Folosiți simulatorul NFC de mai jos sau introduceți UUID-ul.',
+        message: 'Web NFC fizic nu este suportat în acest browser. INSTALEAZĂ aplicația Merlot VIP de pe ecranul principal (butonul „Instalează") — NFC funcționează în aplicația instalată pe Android. Până atunci, folosește simulatorul NFC de mai jos sau introduceți UUID-ul.',
       });
       return;
     }
